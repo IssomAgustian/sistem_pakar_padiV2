@@ -1,0 +1,355 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Kelola Gejala{% endblock %}
+{% block page_title_header %}Kelola Gejala{% endblock %}
+{% block page_icon %}stethoscope{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-2">
+                            <i class="fas fa-stethoscope me-2 text-warning"></i>
+                            Kelola Gejala Penyakit
+                        </h4>
+                        <p class="text-muted mb-0">Manajemen data gejala dengan nilai MB/MD</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Tambah Gejala
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter -->
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="stat-card">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control border-start-0"
+                           placeholder="Cari gejala..." onkeyup="handleSearch()">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <select id="categoryFilter" class="form-select" onchange="handleSearch()">
+                    <option value="">Semua Kategori</option>
+                    <option value="daun">Daun</option>
+                    <option value="batang">Batang</option>
+                    <option value="akar">Akar</option>
+                    <option value="bulir">Bulir</option>
+                    <option value="malai">Malai</option>
+                    <option value="pertumbuhan">Pertumbuhan</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-muted">Total Gejala:</span>
+                    <h4 class="mb-0" id="totalCount">
+                        <span class="loading"></span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th width="5%">No</th>
+                                <th width="10%">Kode</th>
+                                <th width="30%">Nama Gejala</th>
+                                <th width="12%">Kategori</th>
+                                <th width="10%">MB</th>
+                                <th width="10%">MD</th>
+                                <th width="8%">Usage</th>
+                                <th width="15%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="8" class="text-center py-5">
+                                    <div class="loading mx-auto mb-3"></div>
+                                    <p class="text-muted">Memuat data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted" id="paginationInfo"></div>
+                    <nav><ul class="pagination mb-0" id="pagination"></ul></nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="symptomModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white;">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Tambah Gejala
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="symptomForm">
+                <div class="modal-body">
+                    <input type="hidden" id="symptomId">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Kode Gejala <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="symptomCode" placeholder="Contoh: G001" required>
+                            <small class="text-muted">Format: G001, G002, dst.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Kategori <span class="text-danger">*</span></label>
+                            <select class="form-select" id="symptomCategory" required>
+                                <option value="">Pilih Kategori</option>
+                                <option value="daun">Daun</option>
+                                <option value="batang">Batang</option>
+                                <option value="akar">Akar</option>
+                                <option value="bulir">Bulir</option>
+                                <option value="malai">Malai</option>
+                                <option value="pertumbuhan">Pertumbuhan</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nama Gejala <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="symptomName" placeholder="Contoh: Daun menguning" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Deskripsi</label>
+                        <textarea class="form-control" id="symptomDescription" rows="3" placeholder="Deskripsi gejala..."></textarea>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">MB Value (Measure of Belief) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="symptomMB" min="0" max="1" step="0.01" value="0.50" required>
+                            <small class="text-muted">Nilai 0.00 - 1.00</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">MD Value (Measure of Disbelief) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="symptomMD" min="0" max="1" step="0.01" value="0.50" required>
+                            <small class="text-muted">Nilai 0.00 - 1.00</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1, perPage = 10, searchQuery = '', categoryFilter = '';
+let symptomModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    symptomModal = new bootstrap.Modal(document.getElementById('symptomModal'));
+    loadSymptoms();
+});
+
+let searchTimeout;
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        searchQuery = document.getElementById('searchInput').value;
+        categoryFilter = document.getElementById('categoryFilter').value;
+        currentPage = 1;
+        loadSymptoms();
+    }, 500);
+}
+
+async function loadSymptoms() {
+    try {
+        const response = await fetch(`/admin/gejala/list?page=${currentPage}&per_page=${perPage}&search=${searchQuery}&category=${categoryFilter}`);
+        const result = await response.json();
+        if (result.success) {
+            renderTable(result.data);
+            renderPagination(result.pagination);
+            document.getElementById('totalCount').textContent = result.pagination.total;
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('tableBody').innerHTML = '<tr><td colspan="8" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>Error memuat data</td></tr>';
+    }
+}
+
+function renderTable(symptoms) {
+    const tbody = document.getElementById('tableBody');
+    if (symptoms.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="text-center py-5 text-muted"><i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i><p class="mb-0">Tidak ada data gejala</p></td></tr>';
+        return;
+    }
+    tbody.innerHTML = symptoms.map((s, i) => {
+        const no = (currentPage - 1) * perPage + i + 1;
+        const categoryBadge = {
+            'daun': 'success', 'batang': 'warning', 'akar': 'info',
+            'bulir': 'primary', 'malai': 'secondary', 'pertumbuhan': 'danger'
+        };
+        return `
+            <tr style="animation: fadeIn 0.3s ease-in ${i * 0.05}s both;">
+                <td>${no}</td>
+                <td><span class="badge bg-warning">${s.code}</span></td>
+                <td class="fw-bold">${s.name}</td>
+                <td><span class="badge bg-${categoryBadge[s.category] || 'secondary'}">${s.category || '-'}</span></td>
+                <td><span class="badge bg-success">${s.mb_value}</span></td>
+                <td><span class="badge bg-danger">${s.md_value}</span></td>
+                <td><span class="badge bg-info">${s.usage_count || 0}</span></td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-warning" onclick="editSymptom(${s.id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteSymptom(${s.id}, '${s.name}')" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPagination(pagination) {
+    const paginationEl = document.getElementById('pagination');
+    const info = document.getElementById('paginationInfo');
+    const start = (pagination.page - 1) * pagination.per_page + 1;
+    const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+    info.textContent = `Menampilkan ${start}-${end} dari ${pagination.total} data`;
+    if (pagination.pages <= 1) { paginationEl.innerHTML = ''; return; }
+    let html = `<li class="page-item ${pagination.page === 1 ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${pagination.page - 1}); return false;"><i class="fas fa-chevron-left"></i></a></li>`;
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 1 && i <= pagination.page + 1)) {
+            html += `<li class="page-item ${i === pagination.page ? 'active' : ''}"><a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a></li>`;
+        } else if (i === pagination.page - 2 || i === pagination.page + 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+    html += `<li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}"><a class="page-link" href="#" onclick="changePage(${pagination.page + 1}); return false;"><i class="fas fa-chevron-right"></i></a></li>`;
+    paginationEl.innerHTML = html;
+}
+
+function changePage(page) { currentPage = page; loadSymptoms(); }
+
+function openAddModal() {
+    document.getElementById('symptomForm').reset();
+    document.getElementById('symptomId').value = '';
+    document.getElementById('symptomMB').value = '0.50';
+    document.getElementById('symptomMD').value = '0.50';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Tambah Gejala';
+    symptomModal.show();
+}
+
+async function editSymptom(id) {
+    try {
+        const response = await fetch(`/admin/gejala/${id}`);
+        const result = await response.json();
+        if (result.success) {
+            const s = result.data;
+            document.getElementById('symptomId').value = s.id;
+            document.getElementById('symptomCode').value = s.code;
+            document.getElementById('symptomName').value = s.name;
+            document.getElementById('symptomCategory').value = s.category || '';
+            document.getElementById('symptomDescription').value = s.description || '';
+            document.getElementById('symptomMB').value = s.mb_value;
+            document.getElementById('symptomMD').value = s.md_value;
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Gejala';
+            symptomModal.show();
+        }
+    } catch (error) {
+        showToast('Error memuat data', 'error');
+    }
+}
+
+async function deleteSymptom(id, name) {
+    confirmAction({
+        title: 'Hapus Gejala',
+        message: `Apakah Anda yakin ingin menghapus gejala <strong>"${name}"</strong>?<br><small class="text-danger">Data akan dihapus permanen dan tidak dapat dikembalikan.</small>`,
+        confirmText: 'Ya, Hapus',
+        cancelText: 'Batal',
+        type: 'danger',
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/admin/gejala/${id}`, { method: 'DELETE' });
+                const result = await response.json();
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadSymptoms();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                showToast('Error menghapus data', 'error');
+            }
+        }
+    });
+}
+
+document.getElementById('symptomForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    const id = document.getElementById('symptomId').value;
+    const data = {
+        code: document.getElementById('symptomCode').value.trim(),
+        name: document.getElementById('symptomName').value.trim(),
+        category: document.getElementById('symptomCategory').value,
+        description: document.getElementById('symptomDescription').value.trim(),
+        mb_value: parseFloat(document.getElementById('symptomMB').value),
+        md_value: parseFloat(document.getElementById('symptomMD').value)
+    };
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Menyimpan...';
+    try {
+        const url = id ? `/admin/gejala/${id}` : '/admin/gejala/create';
+        const response = await fetch(url, {
+            method: id ? 'PUT' : 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        const result = await response.json();
+        if (result.success) {
+            showToast(result.message, 'success');
+            symptomModal.hide();
+            loadSymptoms();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        showToast('Error menyimpan data', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Simpan';
+    }
+});
+
+// Fade in animation already loaded in admin-common.js
+</script>
+{% endblock %}

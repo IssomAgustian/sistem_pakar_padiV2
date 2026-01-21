@@ -1,0 +1,464 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Kelola Penyakit{% endblock %}
+{% block page_title_header %}Kelola Penyakit{% endblock %}
+{% block page_icon %}virus{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-2">
+                            <i class="fas fa-virus me-2 text-danger"></i>
+                            Kelola Penyakit Tanaman Padi
+                        </h4>
+                        <p class="text-muted mb-0">Manajemen data penyakit untuk sistem diagnosis</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Tambah Penyakit
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search & Filter Section -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="stat-card">
+                <div class="input-group">
+                    <span class="input-group-text bg-white">
+                        <i class="fas fa-search text-muted"></i>
+                    </span>
+                    <input type="text" id="searchInput" class="form-control border-start-0"
+                           placeholder="Cari penyakit berdasarkan kode atau nama..."
+                           onkeyup="handleSearch()">
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="stat-card">
+                <div class="d-flex align-items-center justify-content-between">
+                    <span class="text-muted">Total Penyakit:</span>
+                    <h4 class="mb-0" id="totalCount">
+                        <span class="loading"></span>
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="diseasesTable">
+                        <thead>
+                            <tr>
+                                <th width="5%">No</th>
+                                <th width="10%">Kode</th>
+                                <th width="20%">Nama Penyakit</th>
+                                <th width="40%">Deskripsi</th>
+                                <th width="10%">Rules</th>
+                                <th width="15%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="loading mx-auto mb-3"></div>
+                                    <p class="text-muted">Memuat data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <!-- Pagination -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted" id="paginationInfo">
+                        Menampilkan 0 dari 0 data
+                    </div>
+                    <nav>
+                        <ul class="pagination mb-0" id="pagination">
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add/Edit Modal -->
+<div class="modal fade" id="diseaseModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white;">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Tambah Penyakit
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="diseaseForm">
+                <div class="modal-body">
+                    <input type="hidden" id="diseaseId">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">
+                                Kode Penyakit <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="diseaseCode"
+                                   placeholder="Contoh: P001" required>
+                            <small class="text-muted">Format: P001, P002, dst.</small>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">
+                                Nama Penyakit <span class="text-danger">*</span>
+                            </label>
+                            <input type="text" class="form-control" id="diseaseName"
+                                   placeholder="Contoh: Blas" required>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Deskripsi</label>
+                        <textarea class="form-control" id="diseaseDescription" rows="4"
+                                  placeholder="Deskripsi lengkap tentang penyakit..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- View Detail Modal -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Detail Penyakit
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailContent">
+                <!-- Content will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let perPage = 10;
+let searchQuery = '';
+let diseaseModal, detailModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    diseaseModal = new bootstrap.Modal(document.getElementById('diseaseModal'));
+    detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+    loadDiseases();
+});
+
+// Handle search with debounce
+let searchTimeout;
+function handleSearch() {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+        searchQuery = document.getElementById('searchInput').value;
+        currentPage = 1;
+        loadDiseases();
+    }, 500);
+}
+
+// Load diseases from database
+async function loadDiseases() {
+    try {
+        const response = await fetch(`/admin/penyakit/list?page=${currentPage}&per_page=${perPage}&search=${searchQuery}`);
+        const result = await response.json();
+
+        if (result.success) {
+            renderTable(result.data);
+            renderPagination(result.pagination);
+            document.getElementById('totalCount').textContent = result.pagination.total;
+        } else {
+            throw new Error('Failed to load data');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('tableBody').innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                    Error memuat data
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Render table
+function renderTable(diseases) {
+    const tbody = document.getElementById('tableBody');
+
+    if (diseases.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                    <p class="mb-0">Tidak ada data penyakit</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = diseases.map((disease, index) => {
+        const no = (currentPage - 1) * perPage + index + 1;
+        const description = disease.description ?
+            (disease.description.length > 100 ? disease.description.substring(0, 100) + '...' : disease.description) :
+            '<span class="text-muted fst-italic">Tidak ada deskripsi</span>';
+
+        return `
+            <tr style="animation: fadeIn 0.3s ease-in ${index * 0.05}s both;">
+                <td>${no}</td>
+                <td><span class="badge bg-danger">${disease.code}</span></td>
+                <td class="fw-bold">${disease.name}</td>
+                <td class="text-muted">${description}</td>
+                <td>
+                    <span class="badge bg-info">${disease.rule_count || 0} rules</span>
+                </td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-info" onclick="viewDetail(${disease.id})" title="Lihat Detail">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-warning" onclick="editDisease(${disease.id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteDisease(${disease.id}, '${disease.name}')" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+// Render pagination
+function renderPagination(pagination) {
+    const paginationEl = document.getElementById('pagination');
+    const info = document.getElementById('paginationInfo');
+
+    const start = (pagination.page - 1) * pagination.per_page + 1;
+    const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+    info.textContent = `Menampilkan ${start}-${end} dari ${pagination.total} data`;
+
+    if (pagination.pages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+
+    // Previous button
+    html += `
+        <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${pagination.page - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 1 && i <= pagination.page + 1)) {
+            html += `
+                <li class="page-item ${i === pagination.page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                </li>
+            `;
+        } else if (i === pagination.page - 2 || i === pagination.page + 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    // Next button
+    html += `
+        <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${pagination.page + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginationEl.innerHTML = html;
+}
+
+function changePage(page) {
+    currentPage = page;
+    loadDiseases();
+}
+
+// Open add modal
+function openAddModal() {
+    document.getElementById('diseaseForm').reset();
+    document.getElementById('diseaseId').value = '';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Tambah Penyakit';
+    diseaseModal.show();
+}
+
+// Edit disease
+async function editDisease(id) {
+    try {
+        const response = await fetch(`/admin/penyakit/${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const disease = result.data;
+            document.getElementById('diseaseId').value = disease.id;
+            document.getElementById('diseaseCode').value = disease.code;
+            document.getElementById('diseaseName').value = disease.name;
+            document.getElementById('diseaseDescription').value = disease.description || '';
+            document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Penyakit';
+            diseaseModal.show();
+        } else {
+            showToast('Error memuat data', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error memuat data', 'error');
+    }
+}
+
+// View detail
+async function viewDetail(id) {
+    try {
+        const response = await fetch(`/admin/penyakit/${id}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const disease = result.data;
+            document.getElementById('detailContent').innerHTML = `
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted small">KODE PENYAKIT</label>
+                        <div class="h5"><span class="badge bg-danger">${disease.code}</span></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted small">NAMA PENYAKIT</label>
+                        <div class="h5">${disease.name}</div>
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="fw-bold text-muted small">DESKRIPSI</label>
+                        <div class="border rounded p-3 bg-light">
+                            ${disease.description || '<span class="text-muted fst-italic">Tidak ada deskripsi</span>'}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted small">JUMLAH RULE</label>
+                        <div><span class="badge bg-info fs-6">${disease.rule_count || 0} rules</span></div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="fw-bold text-muted small">DIBUAT TANGGAL</label>
+                        <div class="text-muted">${new Date(disease.created_at).toLocaleDateString('id-ID')}</div>
+                    </div>
+                </div>
+            `;
+            detailModal.show();
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error memuat detail', 'error');
+    }
+}
+
+// Delete disease
+async function deleteDisease(id, name) {
+    confirmAction({
+        title: 'Hapus Penyakit',
+        message: `Apakah Anda yakin ingin menghapus penyakit <strong>"${name}"</strong>?<br><small class="text-danger">Data akan dihapus permanen dan tidak dapat dikembalikan.</small>`,
+        confirmText: 'Ya, Hapus',
+        cancelText: 'Batal',
+        type: 'danger',
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/admin/penyakit/${id}`, {
+                    method: 'DELETE'
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadDiseases();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error menghapus data', 'error');
+            }
+        }
+    });
+}
+
+// Handle form submit
+document.getElementById('diseaseForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('diseaseId').value;
+    const data = {
+        code: document.getElementById('diseaseCode').value.trim(),
+        name: document.getElementById('diseaseName').value.trim(),
+        description: document.getElementById('diseaseDescription').value.trim()
+    };
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Menyimpan...';
+
+    try {
+        const url = id ? `/admin/penyakit/${id}` : '/admin/penyakit/create';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            diseaseModal.hide();
+            loadDiseases();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error menyimpan data', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Simpan';
+    }
+});
+
+// Fade in animation already loaded in admin-common.js
+</script>
+{% endblock %}

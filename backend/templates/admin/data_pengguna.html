@@ -1,0 +1,791 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Data Pengguna{% endblock %}
+{% block page_title_header %}Data Pengguna{% endblock %}
+{% block page_icon %}users{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-2">
+                            <i class="fas fa-users me-2 text-primary"></i>
+                            Data Pengguna
+                        </h4>
+                        <p class="text-muted mb-0">Kelola dan monitor data pengguna sistem</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Tambah User
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    Filter Pencarian
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Cari Email/Nama</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="searchInput" placeholder="Ketik untuk mencari...">
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Role</label>
+                        <select class="form-select" id="roleFilter">
+                            <option value="">Semua Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Status</label>
+                        <select class="form-select" id="statusFilter">
+                            <option value="">Semua Status</option>
+                            <option value="true">Active</option>
+                            <option value="false">Inactive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button class="btn btn-primary me-2" onclick="applyFilters()">
+                            <i class="fas fa-search me-2"></i>Cari
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">
+                            <i class="fas fa-redo me-2"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2 text-success"></i>
+                        Daftar Pengguna
+                        <span class="badge bg-primary ms-2" id="totalCount">0</span>
+                    </h5>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-5">
+                    <div class="loading mx-auto mb-3" style="width: 40px; height: 40px;"></div>
+                    <p class="text-muted">Memuat data pengguna...</p>
+                </div>
+
+                <!-- Table -->
+                <div id="tableContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No</th>
+                                    <th>Email</th>
+                                    <th>Nama Lengkap</th>
+                                    <th style="width: 100px;">Role</th>
+                                    <th style="width: 100px;">Status</th>
+                                    <th>Last Login</th>
+                                    <th>Registered</th>
+                                    <th style="width: 100px;">Total Diagnosis</th>
+                                    <th style="width: 180px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted" id="paginationInfo">
+                            Menampilkan 0 dari 0 data
+                        </div>
+                        <nav>
+                            <ul class="pagination mb-0" id="paginationButtons">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-users fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Tidak ada data pengguna</h5>
+                    <p class="text-muted">Belum ada pengguna yang terdaftar di sistem</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal View Detail -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-user-circle me-2"></i>
+                    Detail Pengguna
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailLoadingState" class="text-center py-4">
+                    <div class="loading mx-auto mb-3"></div>
+                    <p class="text-muted">Memuat detail...</p>
+                </div>
+                <div id="detailContent" style="display: none;">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Email</label>
+                            <p class="fw-bold" id="detailEmail">-</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Nama Lengkap</label>
+                            <p class="fw-bold" id="detailFullName">-</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Role</label>
+                            <p><span class="badge" id="detailRole">-</span></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Status</label>
+                            <p><span class="badge" id="detailStatus">-</span></p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Last Login</label>
+                            <p class="fw-bold" id="detailLastLogin">-</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="text-muted small">Registered Date</label>
+                            <p class="fw-bold" id="detailRegistered">-</p>
+                        </div>
+                        <div class="col-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-clipboard-check me-2"></i>
+                                Total Diagnosis: <strong id="detailDiagnosisCount">0</strong> kali
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Create/Edit User -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white;">
+                <h5 class="modal-title" id="userModalTitle">
+                    <i class="fas fa-user-plus me-2"></i>Tambah User
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="userForm">
+                <div class="modal-body">
+                    <input type="hidden" id="userId">
+
+                    <div class="mb-3">
+                        <label for="userEmail" class="form-label fw-bold">
+                            Email <span class="text-danger">*</span>
+                        </label>
+                        <input type="email" class="form-control" id="userEmail" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="userFullName" class="form-label fw-bold">Nama Lengkap</label>
+                        <input type="text" class="form-control" id="userFullName">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="userPassword" class="form-label fw-bold">
+                            Password <span class="text-danger" id="passwordRequired">*</span>
+                        </label>
+                        <input type="password" class="form-control" id="userPassword">
+                        <small class="text-muted">Kosongkan jika tidak ingin mengubah password</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="userRole" class="form-label fw-bold">
+                            Role <span class="text-danger">*</span>
+                        </label>
+                        <select class="form-select" id="userRole" required>
+                            <option value="user">User</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="userIsActive" checked>
+                        <label class="form-check-label fw-bold" for="userIsActive">
+                            User Aktif
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitUserBtn">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Delete Confirmation -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash-alt me-2"></i>Konfirmasi Hapus User
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="deleteUserId">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Perhatian!</strong> Tindakan ini tidak dapat dibatalkan.
+                </div>
+                <p>Apakah Anda yakin ingin menghapus user berikut?</p>
+                <div class="card">
+                    <div class="card-body">
+                        <h6 class="card-title" id="deleteUserName"></h6>
+                        <p class="card-text text-muted mb-0">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Semua data riwayat diagnosis user ini juga akan dihapus.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Batal
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn" onclick="deleteUser()">
+                    <i class="fas fa-trash me-1"></i>Ya, Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let currentFilters = {
+    search: '',
+    role: '',
+    status: ''
+};
+
+// Load users on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadUsers(1);
+});
+
+// Apply filters
+function applyFilters() {
+    currentFilters.search = document.getElementById('searchInput').value;
+    currentFilters.role = document.getElementById('roleFilter').value;
+    currentFilters.status = document.getElementById('statusFilter').value;
+    loadUsers(1);
+}
+
+// Reset filters
+function resetFilters() {
+    document.getElementById('searchInput').value = '';
+    document.getElementById('roleFilter').value = '';
+    document.getElementById('statusFilter').value = '';
+    currentFilters = { search: '', role: '', status: '' };
+    loadUsers(1);
+}
+
+// Load users from API
+async function loadUsers(page) {
+    currentPage = page;
+
+    // Show loading
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('tableContainer').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+
+    try {
+        const params = new URLSearchParams({
+            page: page,
+            per_page: 20,
+            search: currentFilters.search,
+            role: currentFilters.role,
+            is_active: currentFilters.status
+        });
+
+        const response = await fetch(`/admin/pengguna/list?${params}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to load users');
+        }
+
+        const users = result.data;
+        const pagination = result.pagination;
+
+        // Update total count
+        document.getElementById('totalCount').textContent = pagination.total;
+
+        if (users.length === 0) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            return;
+        }
+
+        // Render table
+        renderUsersTable(users, pagination);
+
+        // Show table
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('tableContainer').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading users:', error);
+        showToast('Gagal memuat data pengguna: ' + error.message, 'error');
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+    }
+}
+
+// Render users table
+function renderUsersTable(users, pagination) {
+    const tbody = document.getElementById('usersTableBody');
+    const startNum = (pagination.page - 1) * pagination.per_page;
+
+    tbody.innerHTML = users.map((user, index) => {
+        const num = startNum + index + 1;
+        const roleBadgeClass = user.role === 'admin' ? 'bg-warning' : 'bg-info';
+        const statusBadgeClass = user.is_active ? 'bg-success' : 'bg-danger';
+        const statusText = user.is_active ? 'Active' : 'Inactive';
+        const lastLogin = user.last_login ? formatDateTime(user.last_login) : '-';
+        const registered = user.created_at ? formatDate(user.created_at) : '-';
+
+        return `
+            <tr style="animation: fadeIn 0.3s ease-in ${index * 0.05}s; animation-fill-mode: backwards;">
+                <td>${num}</td>
+                <td><i class="fas fa-envelope me-2 text-muted"></i>${user.email}</td>
+                <td>${user.full_name || '-'}</td>
+                <td><span class="badge ${roleBadgeClass}">${user.role}</span></td>
+                <td><span class="badge ${statusBadgeClass}">${statusText}</span></td>
+                <td><small>${lastLogin}</small></td>
+                <td><small>${registered}</small></td>
+                <td class="text-center">
+                    <span class="badge bg-primary" id="diagnosisCount-${user.id}">
+                        <i class="fas fa-spinner fa-spin"></i>
+                    </span>
+                </td>
+                <td>
+                    <button class="btn btn-sm btn-info me-1" onclick="viewDetail(${user.id})" title="Detail">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button class="btn btn-sm btn-warning me-1" onclick="editUser(${user.id})" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn btn-sm ${user.is_active ? 'btn-secondary' : 'btn-success'} me-1"
+                            onclick="toggleStatus(${user.id}, ${user.is_active})"
+                            title="${user.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                        <i class="fas fa-power-off"></i>
+                    </button>
+                    <button class="btn btn-sm btn-danger"
+                            onclick="confirmDelete(${user.id}, '${user.full_name || user.email}')"
+                            title="Hapus User">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Load diagnosis counts
+    users.forEach(user => {
+        loadDiagnosisCount(user.id);
+    });
+
+    // Render pagination
+    renderPagination(pagination);
+}
+
+// Load diagnosis count for user
+async function loadDiagnosisCount(userId) {
+    try {
+        const response = await fetch(`/admin/pengguna/${userId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const countElement = document.getElementById(`diagnosisCount-${userId}`);
+            if (countElement) {
+                countElement.innerHTML = result.data.diagnosis_count || 0;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading diagnosis count:', error);
+        const countElement = document.getElementById(`diagnosisCount-${userId}`);
+        if (countElement) {
+            countElement.innerHTML = '0';
+        }
+    }
+}
+
+// Render pagination
+function renderPagination(pagination) {
+    const info = document.getElementById('paginationInfo');
+    const buttons = document.getElementById('paginationButtons');
+
+    const start = (pagination.page - 1) * pagination.per_page + 1;
+    const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+    info.textContent = `Menampilkan ${start}-${end} dari ${pagination.total} data`;
+
+    let html = '';
+
+    // Previous button
+    html += `
+        <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadUsers(${pagination.page - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+            html += `
+                <li class="page-item ${i === pagination.page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadUsers(${i}); return false;">${i}</a>
+                </li>
+            `;
+        } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    // Next button
+    html += `
+        <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadUsers(${pagination.page + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    buttons.innerHTML = html;
+}
+
+// View user detail
+async function viewDetail(userId) {
+    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+    modal.show();
+
+    // Show loading
+    document.getElementById('detailLoadingState').style.display = 'block';
+    document.getElementById('detailContent').style.display = 'none';
+
+    try {
+        const response = await fetch(`/admin/pengguna/${userId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to load user detail');
+        }
+
+        const user = result.data;
+
+        // Populate modal
+        document.getElementById('detailEmail').textContent = user.email;
+        document.getElementById('detailFullName').textContent = user.full_name || '-';
+
+        const roleBadge = document.getElementById('detailRole');
+        roleBadge.textContent = user.role;
+        roleBadge.className = `badge ${user.role === 'admin' ? 'bg-warning' : 'bg-info'}`;
+
+        const statusBadge = document.getElementById('detailStatus');
+        statusBadge.textContent = user.is_active ? 'Active' : 'Inactive';
+        statusBadge.className = `badge ${user.is_active ? 'bg-success' : 'bg-danger'}`;
+
+        document.getElementById('detailLastLogin').textContent = user.last_login ? formatDateTime(user.last_login) : 'Belum pernah login';
+        document.getElementById('detailRegistered').textContent = user.created_at ? formatDateTime(user.created_at) : '-';
+        document.getElementById('detailDiagnosisCount').textContent = user.diagnosis_count || 0;
+
+        // Show content
+        document.getElementById('detailLoadingState').style.display = 'none';
+        document.getElementById('detailContent').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading user detail:', error);
+        showToast('Gagal memuat detail pengguna: ' + error.message, 'error');
+        modal.hide();
+    }
+}
+
+// Toggle user status
+async function toggleStatus(userId, currentStatus) {
+    const action = currentStatus ? 'menonaktifkan' : 'mengaktifkan';
+    const actionCapital = currentStatus ? 'Nonaktifkan' : 'Aktifkan';
+    const icon = currentStatus ? 'user-slash' : 'user-check';
+    const type = currentStatus ? 'warning' : 'success';
+
+    confirmAction({
+        title: `${actionCapital} Pengguna`,
+        message: `Apakah Anda yakin ingin <strong>${action}</strong> pengguna ini?`,
+        confirmText: `Ya, ${actionCapital}`,
+        cancelText: 'Batal',
+        type: type,
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/admin/pengguna/${userId}/toggle-status`, {
+                    method: 'PUT'
+                });
+
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Failed to toggle status');
+                }
+
+                showToast(result.message, 'success');
+                loadUsers(currentPage);
+
+            } catch (error) {
+                console.error('Error toggling status:', error);
+                showToast('Gagal mengubah status: ' + error.message, 'error');
+            }
+        }
+    });
+}
+
+// Confirm delete user
+function confirmDelete(userId, userName) {
+    document.getElementById('deleteUserId').value = userId;
+    document.getElementById('deleteUserName').textContent = userName;
+    const modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Delete user
+async function deleteUser() {
+    const userId = document.getElementById('deleteUserId').value;
+    const userName = document.getElementById('deleteUserName').textContent;
+
+    // Set button loading
+    setButtonLoading('confirmDeleteBtn', true);
+
+    try {
+        const response = await fetch(`/admin/pengguna/${userId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to delete user');
+        }
+
+        // Close modal
+        closeModal('deleteModal');
+
+        // Show success message
+        showToast(result.message, 'success');
+
+        // Reload data
+        loadUsers(currentPage);
+
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        showToast('Gagal menghapus user: ' + error.message, 'error');
+    } finally {
+        setButtonLoading('confirmDeleteBtn', false);
+    }
+}
+
+// Format date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Format datetime
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Open add modal
+function openAddModal() {
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    document.getElementById('userModalTitle').innerHTML = '<i class="fas fa-user-plus me-2"></i>Tambah User';
+    document.getElementById('userPassword').required = true;
+    document.getElementById('passwordRequired').style.display = 'inline';
+
+    const modal = new bootstrap.Modal(document.getElementById('userModal'));
+    modal.show();
+}
+
+// Edit user
+async function editUser(userId) {
+    try {
+        const response = await fetch(`/admin/pengguna/${userId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to load user');
+        }
+
+        const user = result.data;
+
+        // Populate form
+        document.getElementById('userId').value = user.id;
+        document.getElementById('userEmail').value = user.email;
+        document.getElementById('userFullName').value = user.full_name || '';
+        document.getElementById('userPassword').value = '';
+        document.getElementById('userRole').value = user.role;
+        document.getElementById('userIsActive').checked = user.is_active;
+
+        // Change modal title
+        document.getElementById('userModalTitle').innerHTML = '<i class="fas fa-user-edit me-2"></i>Edit User';
+        document.getElementById('userPassword').required = false;
+        document.getElementById('passwordRequired').style.display = 'none';
+
+        const modal = new bootstrap.Modal(document.getElementById('userModal'));
+        modal.show();
+
+    } catch (error) {
+        console.error('Error loading user:', error);
+        showToast('Gagal memuat data user: ' + error.message, 'error');
+    }
+}
+
+// Handle form submit
+document.getElementById('userForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const userId = document.getElementById('userId').value;
+    const isEdit = userId !== '';
+
+    const data = {
+        email: document.getElementById('userEmail').value,
+        full_name: document.getElementById('userFullName').value,
+        password: document.getElementById('userPassword').value,
+        role: document.getElementById('userRole').value,
+        is_active: document.getElementById('userIsActive').checked
+    };
+
+    // Set button loading
+    setButtonLoading('submitUserBtn', true);
+
+    try {
+        const url = isEdit ? `/admin/pengguna/${userId}` : '/admin/pengguna/create';
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to save user');
+        }
+
+        // Show success message
+        showToast(result.message, 'success');
+
+        // Close modal
+        closeModal('userModal');
+
+        // Reload data
+        loadUsers(currentPage);
+
+    } catch (error) {
+        console.error('Error saving user:', error);
+        showToast(error.message || 'Gagal menyimpan data user', 'error');
+    } finally {
+        setButtonLoading('submitUserBtn', false);
+    }
+});
+
+// Search on Enter key
+document.getElementById('searchInput').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        applyFilters();
+    }
+});
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.loading {
+    border: 3px solid rgba(22, 163, 74, 0.2);
+    border-top-color: #16a34a;
+}
+
+.pagination .page-link {
+    color: #16a34a;
+    border: 1px solid #e5e7eb;
+    margin: 0 2px;
+    border-radius: 8px;
+}
+
+.pagination .page-link:hover {
+    background-color: #f3f4f6;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: #16a34a;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+</style>
+{% endblock %}

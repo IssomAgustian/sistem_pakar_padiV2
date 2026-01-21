@@ -1,0 +1,539 @@
+{% extends "admin/layout.html" %}
+{% block page_title %}System Logs{% endblock %}
+{% block page_title_header %}System Logs & Aktivitas{% endblock %}
+{% block page_icon %}clipboard-list{% endblock %}
+
+{% block admin_content %}
+<style>
+    .action-badge {
+        padding: 4px 10px;
+        border-radius: 6px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        display: inline-block;
+    }
+
+    .action-badge.create {
+        background: #d1fae5;
+        color: #065f46;
+    }
+
+    .action-badge.update {
+        background: #dbeafe;
+        color: #1e40af;
+    }
+
+    .action-badge.delete {
+        background: #fee2e2;
+        color: #991b1b;
+    }
+
+    .action-badge.login {
+        background: #fed7aa;
+        color: #92400e;
+    }
+
+    .log-details {
+        font-size: 0.9rem;
+        color: #64748b;
+        max-width: 300px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-2">
+                            <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                            System Logs & Aktivitas
+                        </h4>
+                        <p class="text-muted mb-0">Monitor semua aktivitas admin dan sistem</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button class="btn btn-success btn-sm" onclick="exportLogs('excel')">
+                            <i class="fas fa-file-excel me-1"></i>Export Excel
+                        </button>
+                        <button class="btn btn-danger btn-sm" onclick="exportLogs('pdf')">
+                            <i class="fas fa-file-pdf me-1"></i>Export PDF
+                        </button>
+                        <button class="btn btn-secondary btn-sm" onclick="refreshLogs()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <i class="fas fa-clipboard-list fa-2x text-primary"></i>
+                </div>
+                <h3 class="mb-1" id="total-logs">0</h3>
+                <p class="text-muted mb-0">Total Logs</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <i class="fas fa-plus-circle fa-2x text-success"></i>
+                </div>
+                <h3 class="mb-1" id="create-count">0</h3>
+                <p class="text-muted mb-0">Create Actions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <i class="fas fa-edit fa-2x text-warning"></i>
+                </div>
+                <h3 class="mb-1" id="update-count">0</h3>
+                <p class="text-muted mb-0">Update Actions</p>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stat-card text-center">
+                <div class="mb-2">
+                    <i class="fas fa-trash-alt fa-2x text-danger"></i>
+                </div>
+                <h3 class="mb-1" id="delete-count">0</h3>
+                <p class="text-muted mb-0">Delete Actions</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    Filter Pencarian
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Tanggal Mulai</label>
+                        <input type="date" id="start-date" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tanggal Selesai</label>
+                        <input type="date" id="end-date" class="form-control">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Action</label>
+                        <select id="action-filter" class="form-select">
+                            <option value="">Semua Action</option>
+                            <option value="CREATE">Create</option>
+                            <option value="UPDATE">Update</option>
+                            <option value="DELETE">Delete</option>
+                            <option value="LOGIN">Login</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Table</label>
+                        <select id="table-filter" class="form-select">
+                            <option value="">Semua Table</option>
+                            <option value="diseases">Penyakit</option>
+                            <option value="symptoms">Gejala</option>
+                            <option value="rules">Rule</option>
+                            <option value="admin">Admin</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end">
+                        <button class="btn btn-primary me-2" onclick="applyFilters()">
+                            <i class="fas fa-filter me-1"></i>Filter
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">
+                            <i class="fas fa-redo me-1"></i>Reset
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Logs Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2 text-success"></i>
+                        Activity Logs
+                        <span class="badge bg-primary ms-2" id="filtered-count">0</span>
+                    </h5>
+                    <div class="input-group" style="max-width: 300px;">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="search-input" placeholder="Cari log..." onkeyup="searchLogs()">
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-5">
+                    <div class="loading mx-auto mb-3" style="width: 40px; height: 40px;"></div>
+                    <p class="text-muted">Memuat data logs...</p>
+                </div>
+
+                <!-- Table -->
+                <div id="tableContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No</th>
+                                    <th>Admin</th>
+                                    <th style="width: 120px;">Action</th>
+                                    <th style="width: 120px;">Table</th>
+                                    <th>Details</th>
+                                    <th style="width: 130px;">IP Address</th>
+                                    <th style="width: 150px;">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody id="logs-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted" id="paginationInfo">
+                            Menampilkan 0 dari 0 data
+                        </div>
+                        <nav>
+                            <ul class="pagination mb-0" id="paginationButtons">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-clipboard-list fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Tidak ada data log</h5>
+                    <p class="text-muted">Belum ada aktivitas yang tercatat di sistem</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let logsData = [];
+let filteredLogs = [];
+const itemsPerPage = 10;
+
+// Load logs from API
+async function loadLogs() {
+    try {
+        document.getElementById('loadingState').style.display = 'block';
+        document.getElementById('tableContainer').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'none';
+
+        const response = await fetch('/admin/api/logs');
+        if (response.ok) {
+            const data = await response.json();
+            logsData = data.logs || [];
+            filteredLogs = logsData;
+            updateStatistics();
+            renderLogsTable(currentPage);
+
+            document.getElementById('loadingState').style.display = 'none';
+            if (logsData.length > 0) {
+                document.getElementById('tableContainer').style.display = 'block';
+            } else {
+                document.getElementById('emptyState').style.display = 'block';
+            }
+        } else {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error loading logs:', error);
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+    }
+}
+
+// Update statistics
+function updateStatistics() {
+    document.getElementById('total-logs').textContent = logsData.length;
+    document.getElementById('filtered-count').textContent = filteredLogs.length;
+
+    const createCount = logsData.filter(log => log.action === 'CREATE').length;
+    const updateCount = logsData.filter(log => log.action === 'UPDATE').length;
+    const deleteCount = logsData.filter(log => log.action === 'DELETE').length;
+
+    document.getElementById('create-count').textContent = createCount;
+    document.getElementById('update-count').textContent = updateCount;
+    document.getElementById('delete-count').textContent = deleteCount;
+}
+
+// Render logs table
+function renderLogsTable(page = 1) {
+    const tbody = document.getElementById('logs-tbody');
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    const paginatedLogs = filteredLogs.slice(startIndex, endIndex);
+
+    if (filteredLogs.length === 0) {
+        document.getElementById('tableContainer').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+        return;
+    }
+
+    document.getElementById('tableContainer').style.display = 'block';
+    document.getElementById('emptyState').style.display = 'none';
+
+    tbody.innerHTML = paginatedLogs.map((log, index) => `
+        <tr>
+            <td>${startIndex + index + 1}</td>
+            <td>
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-user-circle me-2" style="font-size: 1.5rem; color: var(--primary-green);"></i>
+                    <strong>${log.admin_name || 'Unknown'}</strong>
+                </div>
+            </td>
+            <td>
+                <span class="action-badge ${log.action.toLowerCase()}">${log.action}</span>
+            </td>
+            <td><span class="badge bg-secondary">${log.table_name || '-'}</span></td>
+            <td class="log-details" title="${log.description || 'No details'}">${log.description || 'No details'}</td>
+            <td><small class="text-muted">${log.ip_address || '-'}</small></td>
+            <td><small>${formatDateTime(log.created_at)}</small></td>
+        </tr>
+    `).join('');
+
+    updatePaginationInfo(startIndex, endIndex, filteredLogs.length);
+    renderPagination(filteredLogs.length, itemsPerPage, page);
+}
+
+// Update pagination info
+function updatePaginationInfo(start, end, total) {
+    const actualEnd = Math.min(end, total);
+    document.getElementById('paginationInfo').textContent =
+        `Menampilkan ${start + 1} - ${actualEnd} dari ${total} data`;
+}
+
+// Render pagination
+function renderPagination(totalItems, itemsPerPage, currentPage) {
+    const totalPages = Math.ceil(totalItems / itemsPerPage);
+    const paginationButtons = document.getElementById('paginationButtons');
+
+    if (totalPages <= 1) {
+        paginationButtons.innerHTML = '';
+        return;
+    }
+
+    let html = `
+        <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Show first page
+    if (currentPage > 3) {
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(1); return false;">1</a>
+            </li>
+        `;
+        if (currentPage > 4) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+    }
+
+    // Show pages around current page
+    for (let i = Math.max(1, currentPage - 2); i <= Math.min(totalPages, currentPage + 2); i++) {
+        html += `
+            <li class="page-item ${i === currentPage ? 'active' : ''}">
+                <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+            </li>
+        `;
+    }
+
+    // Show last page
+    if (currentPage < totalPages - 2) {
+        if (currentPage < totalPages - 3) {
+            html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        html += `
+            <li class="page-item">
+                <a class="page-link" href="#" onclick="changePage(${totalPages}); return false;">${totalPages}</a>
+            </li>
+        `;
+    }
+
+    html += `
+        <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${currentPage + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginationButtons.innerHTML = html;
+}
+
+// Change page
+function changePage(page) {
+    currentPage = page;
+    renderLogsTable(page);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// Apply filters
+function applyFilters() {
+    const startDate = document.getElementById('start-date').value;
+    const endDate = document.getElementById('end-date').value;
+    const action = document.getElementById('action-filter').value;
+    const table = document.getElementById('table-filter').value;
+
+    filteredLogs = logsData.filter(log => {
+        let match = true;
+
+        if (startDate && new Date(log.created_at) < new Date(startDate)) {
+            match = false;
+        }
+
+        if (endDate && new Date(log.created_at) > new Date(endDate + 'T23:59:59')) {
+            match = false;
+        }
+
+        if (action && log.action !== action) {
+            match = false;
+        }
+
+        if (table && log.table_name !== table) {
+            match = false;
+        }
+
+        return match;
+    });
+
+    document.getElementById('filtered-count').textContent = filteredLogs.length;
+    currentPage = 1;
+    renderLogsTable(currentPage);
+    showToast('Filter diterapkan', 'success');
+}
+
+// Reset filters
+function resetFilters() {
+    document.getElementById('start-date').value = '';
+    document.getElementById('end-date').value = '';
+    document.getElementById('action-filter').value = '';
+    document.getElementById('table-filter').value = '';
+    document.getElementById('search-input').value = '';
+
+    filteredLogs = logsData;
+    document.getElementById('filtered-count').textContent = filteredLogs.length;
+    currentPage = 1;
+    renderLogsTable(currentPage);
+    showToast('Filter direset', 'info');
+}
+
+// Search logs
+function searchLogs() {
+    const searchTerm = document.getElementById('search-input').value.toLowerCase();
+
+    filteredLogs = logsData.filter(log => {
+        return (
+            log.admin_name?.toLowerCase().includes(searchTerm) ||
+            log.action?.toLowerCase().includes(searchTerm) ||
+            log.table_name?.toLowerCase().includes(searchTerm) ||
+            log.description?.toLowerCase().includes(searchTerm) ||
+            log.ip_address?.toLowerCase().includes(searchTerm)
+        );
+    });
+
+    document.getElementById('filtered-count').textContent = filteredLogs.length;
+    currentPage = 1;
+    renderLogsTable(currentPage);
+}
+
+// Refresh logs
+function refreshLogs() {
+    const btn = event.target.closest('button');
+    const icon = btn.querySelector('i');
+    icon.style.animation = 'spin 1s linear infinite';
+
+    loadLogs().then(() => {
+        icon.style.animation = '';
+        showToast('Data logs berhasil di-refresh', 'success');
+    });
+}
+
+// Export logs
+async function exportLogs(format) {
+    try {
+        const response = await fetch(`/admin/api/logs/export?format=${format}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                start_date: document.getElementById('start-date').value,
+                end_date: document.getElementById('end-date').value,
+                action: document.getElementById('action-filter').value,
+                table: document.getElementById('table-filter').value
+            })
+        });
+
+        if (response.ok) {
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `system_logs_${new Date().getTime()}.${format === 'excel' ? 'xlsx' : 'pdf'}`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+
+            showToast(`Logs berhasil di-export ke ${format.toUpperCase()}`, 'success');
+        } else {
+            showToast('Gagal export logs', 'error');
+        }
+    } catch (error) {
+        console.error('Error exporting logs:', error);
+        showToast('Terjadi kesalahan saat export logs', 'error');
+    }
+}
+
+// Format date time
+function formatDateTime(dateString) {
+    if (!dateString) return '-';
+    const date = new Date(dateString);
+    return date.toLocaleString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+
+// Load logs on page load
+document.addEventListener('DOMContentLoaded', loadLogs);
+</script>
+{% endblock %}

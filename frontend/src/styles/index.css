@@ -1,0 +1,152 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* Toast Animations */
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-in;
+}
+
+/* Line clamp utilities */
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Print styles for PDF export */
+@media print {
+  /* Hide elements that shouldn't be printed */
+  .no-print,
+  button,
+  nav,
+  header .bg-gradient-to-r,
+  .fixed,
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Reset page margins */
+  @page {
+    margin: 1.5cm;
+    size: A4;
+  }
+
+  body {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Ensure content fits on page */
+  .container {
+    max-width: 100% !important;
+    padding: 0 !important;
+  }
+
+  /* Prevent page breaks inside important elements */
+  .bg-white,
+  .shadow-lg,
+  .rounded-xl {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  /* Ensure colors are printed */
+  .bg-green-100,
+  .bg-yellow-100,
+  .bg-orange-100,
+  .bg-green-700,
+  .text-green-700,
+  .text-yellow-700,
+  .text-orange-700 {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* Adjust spacing for print */
+  .mb-8,
+  .my-8 {
+    margin-bottom: 1rem !important;
+  }
+
+  /* Show print header */
+  .print-header {
+    display: block !important;
+    text-align: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid #4CAF50;
+  }
+
+  /* Optimize font sizes for print */
+  h1 {
+    font-size: 24pt !important;
+  }
+
+  h2 {
+    font-size: 20pt !important;
+  }
+
+  h3 {
+    font-size: 16pt !important;
+  }
+
+  p,
+  li {
+    font-size: 11pt !important;
+  }
+}

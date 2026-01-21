@@ -1,0 +1,43 @@
+{
+  "name": "pakar-padi-frontend",
+  "version": "1.0.0",
+  "description": "Rice Plant Disease Diagnosis Expert System - Frontend",
+  "type": "module",
+  "private": true,
+  "dependencies": {
+    "@react-oauth/google": "^0.11.1",
+    "axios": "^1.6.2",
+    "daisyui": "^4.4.19",
+    "jspdf": "^3.0.3",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.48.2",
+    "react-icons": "^4.12.0",
+    "react-router-dom": "^6.20.0",
+    "tailwindcss": "^3.3.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.2.1",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32",
+    "vite": "^6.4.1"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext js,jsx"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

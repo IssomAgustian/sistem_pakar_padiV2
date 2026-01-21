@@ -1,0 +1,466 @@
+{% extends "admin/layout.html" %}
+{% block page_title %}Pengaturan Sistem{% endblock %}
+{% block page_title_header %}Pengaturan Sistem{% endblock %}
+
+{% block admin_content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>Pengaturan Sistem</h2>
+        <p class="text-muted">Konfigurasi sistem dan integrasi</p>
+    </div>
+</div>
+
+<form id="settingsForm">
+    <!-- Tabs Navigation -->
+    <ul class="nav nav-tabs mb-4" id="settingsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="ai-tab" data-bs-toggle="tab" data-bs-target="#aiConfig" type="button" role="tab">
+                <i class="fas fa-robot"></i> AI Configuration
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="limits-tab" data-bs-toggle="tab" data-bs-target="#systemLimits" type="button" role="tab">
+                <i class="fas fa-sliders-h"></i> System Limits
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                <i class="fas fa-tools"></i> Maintenance
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="email-tab" data-bs-toggle="tab" data-bs-target="#emailSettings" type="button" role="tab">
+                <i class="fas fa-envelope"></i> Email Settings
+            </button>
+        </li>
+    </ul>
+
+    <!-- Tab Content -->
+    <div class="tab-content" id="settingsTabContent">
+
+        <!-- AI Configuration Tab -->
+        <div class="tab-pane fade show active" id="aiConfig" role="tabpanel">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">AI Configuration</h3>
+                </div>
+                <div class="content-card-body">
+
+                    <!-- AI Provider Selection -->
+                    <div class="form-group">
+                        <label class="font-weight-bold">AI Provider</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider" id="providerOpenAI" value="openai" checked>
+                            <label class="form-check-label" for="providerOpenAI">
+                                <i class="fas fa-brain text-primary"></i> OpenAI
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="ai_provider" id="providerGemini" value="gemini">
+                            <label class="form-check-label" for="providerGemini">
+                                <i class="fas fa-gem text-success"></i> Google Gemini
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- OpenAI API Key -->
+                    <div class="form-group">
+                        <label for="openaiApiKey">OpenAI API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="openaiApiKey" name="openai_api_key"
+                                   placeholder="sk-...">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('openaiApiKey')">
+                                    <i class="fas fa-eye" id="openaiApiKey-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            Dapatkan API key dari <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Dashboard</a>
+                        </small>
+                    </div>
+
+                    <!-- Gemini API Key -->
+                    <div class="form-group">
+                        <label for="geminiApiKey">Google Gemini API Key</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="geminiApiKey" name="gemini_api_key"
+                                   placeholder="AI...">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('geminiApiKey')">
+                                    <i class="fas fa-eye" id="geminiApiKey-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            Dapatkan API key dari <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a>
+                        </small>
+                    </div>
+
+                    <!-- Test Connection Button -->
+                    <button type="button" class="btn btn-info" onclick="testAIConnection()">
+                        <i class="fas fa-plug"></i> Test Connection
+                    </button>
+                    <div id="testResult" class="mt-3" style="display: none;"></div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- System Limits Tab -->
+        <div class="tab-pane fade" id="systemLimits" role="tabpanel">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">System Limits</h3>
+                </div>
+                <div class="content-card-body">
+
+                    <div class="form-group">
+                        <label for="historyRetentionDays">History Retention Days</label>
+                        <input type="number" class="form-control" id="historyRetentionDays"
+                               name="history_retention_days" value="30" min="1" max="365">
+                        <small class="form-text text-muted">
+                            Berapa lama riwayat diagnosis disimpan (dalam hari). Default: 30 hari.
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maxDiagnosesPerDay">Max Diagnoses Per Day</label>
+                        <input type="number" class="form-control" id="maxDiagnosesPerDay"
+                               name="max_diagnoses_per_day" value="20" min="1" max="100">
+                        <small class="form-text text-muted">
+                            Maksimal diagnosis yang dapat dilakukan user per hari. Default: 20 diagnosis.
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Maintenance Tab -->
+        <div class="tab-pane fade" id="maintenance" role="tabpanel">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">Maintenance Mode</h3>
+                </div>
+                <div class="content-card-body">
+
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="maintenanceMode"
+                                   name="maintenance_mode" value="true">
+                            <label class="custom-control-label" for="maintenanceMode">
+                                <strong>Enable Maintenance Mode</strong>
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Ketika diaktifkan, user tidak dapat mengakses sistem (kecuali admin).
+                        </small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maintenanceMessage">Maintenance Message</label>
+                        <textarea class="form-control" id="maintenanceMessage" name="maintenance_message"
+                                  rows="4" placeholder="Sistem sedang dalam maintenance..."></textarea>
+                        <small class="form-text text-muted">
+                            Pesan yang ditampilkan kepada user saat maintenance mode aktif.
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <!-- Email Settings Tab -->
+        <div class="tab-pane fade" id="emailSettings" role="tabpanel">
+            <div class="content-card">
+                <div class="content-card-header">
+                    <h3 class="content-card-title">Email Settings (Optional)</h3>
+                </div>
+                <div class="content-card-body">
+
+                    <div class="form-group">
+                        <div class="custom-control custom-switch">
+                            <input type="checkbox" class="custom-control-input" id="enableEmailNotifications"
+                                   name="enable_email_notifications" value="true">
+                            <label class="custom-control-label" for="enableEmailNotifications">
+                                <strong>Enable Email Notifications</strong>
+                            </label>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-8">
+                            <label for="smtpHost">SMTP Host</label>
+                            <input type="text" class="form-control" id="smtpHost" name="smtp_host"
+                                   placeholder="smtp.gmail.com">
+                        </div>
+                        <div class="form-group col-md-4">
+                            <label for="smtpPort">SMTP Port</label>
+                            <input type="number" class="form-control" id="smtpPort" name="smtp_port"
+                                   value="587">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smtpUsername">SMTP Username</label>
+                        <input type="text" class="form-control" id="smtpUsername" name="smtp_username"
+                               placeholder="your-email@gmail.com">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smtpPassword">SMTP Password</label>
+                        <div class="input-group">
+                            <input type="password" class="form-control" id="smtpPassword" name="smtp_password"
+                                   placeholder="App password atau SMTP password">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('smtpPassword')">
+                                    <i class="fas fa-eye" id="smtpPassword-icon"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted">
+                            Untuk Gmail, gunakan <a href="https://support.google.com/accounts/answer/185833" target="_blank">App Password</a>
+                        </small>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Save Button -->
+    <div class="row mt-4">
+        <div class="col-md-12 text-right">
+            <button type="button" class="btn btn-secondary mr-2" onclick="loadSettings()">
+                <i class="fas fa-undo"></i> Reset
+            </button>
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> Save All Settings
+            </button>
+        </div>
+    </div>
+</form>
+
+<style>
+.content-card {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    background: white;
+    margin-bottom: 20px;
+}
+.content-card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f9fafb;
+}
+.content-card-body {
+    padding: 1.5rem;
+}
+.content-card-title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #1f2937;
+}
+.nav-tabs .nav-link {
+    color: #6b7280;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.5rem;
+}
+.nav-tabs .nav-link:hover {
+    border-color: transparent;
+    color: #16a34a;
+}
+.nav-tabs .nav-link.active {
+    color: #16a34a;
+    border-color: #16a34a;
+    background: transparent;
+}
+.form-check-label {
+    cursor: pointer;
+}
+.custom-control-label {
+    cursor: pointer;
+}
+#testResult.alert {
+    display: block !important;
+}
+</style>
+
+<script>
+let currentSettings = {};
+
+// Load current settings from server
+async function loadSettings() {
+    try {
+        const response = await fetch('/admin/pengaturan-sistem/current');
+        const result = await response.json();
+
+        if (result.success) {
+            currentSettings = result.data;
+            populateForm(currentSettings);
+            showToast('Pengaturan dimuat', 'success');
+        } else {
+            showToast('Gagal memuat pengaturan: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error loading settings:', error);
+        showToast('Gagal memuat pengaturan', 'error');
+    }
+}
+
+// Populate form with settings data
+function populateForm(settings) {
+    // AI Provider
+    if (settings.ai_provider === 'openai') {
+        document.getElementById('providerOpenAI').checked = true;
+    } else if (settings.ai_provider === 'gemini') {
+        document.getElementById('providerGemini').checked = true;
+    }
+
+    // API Keys
+    document.getElementById('openaiApiKey').value = settings.openai_api_key || '';
+    document.getElementById('geminiApiKey').value = settings.gemini_api_key || '';
+
+    // System Limits
+    document.getElementById('historyRetentionDays').value = settings.history_retention_days || '30';
+    document.getElementById('maxDiagnosesPerDay').value = settings.max_diagnoses_per_day || '20';
+
+    // Maintenance
+    document.getElementById('maintenanceMode').checked = settings.maintenance_mode === 'true';
+    document.getElementById('maintenanceMessage').value = settings.maintenance_message || '';
+
+    // Email Settings
+    document.getElementById('enableEmailNotifications').checked = settings.enable_email_notifications === 'true';
+    document.getElementById('smtpHost').value = settings.smtp_host || '';
+    document.getElementById('smtpPort').value = settings.smtp_port || '587';
+    document.getElementById('smtpUsername').value = settings.smtp_username || '';
+    document.getElementById('smtpPassword').value = settings.smtp_password || '';
+}
+
+// Collect form data
+function collectFormData() {
+    const formData = {
+        ai_provider: document.querySelector('input[name="ai_provider"]:checked').value,
+        openai_api_key: document.getElementById('openaiApiKey').value,
+        gemini_api_key: document.getElementById('geminiApiKey').value,
+        history_retention_days: document.getElementById('historyRetentionDays').value,
+        max_diagnoses_per_day: document.getElementById('maxDiagnosesPerDay').value,
+        maintenance_mode: document.getElementById('maintenanceMode').checked ? 'true' : 'false',
+        maintenance_message: document.getElementById('maintenanceMessage').value,
+        smtp_host: document.getElementById('smtpHost').value,
+        smtp_port: document.getElementById('smtpPort').value,
+        smtp_username: document.getElementById('smtpUsername').value,
+        smtp_password: document.getElementById('smtpPassword').value,
+        enable_email_notifications: document.getElementById('enableEmailNotifications').checked ? 'true' : 'false'
+    };
+    return formData;
+}
+
+// Save settings
+async function saveSettings(event) {
+    event.preventDefault();
+
+    const formData = collectFormData();
+
+    try {
+        const response = await fetch('/admin/pengaturan-sistem/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast('Pengaturan berhasil disimpan!', 'success');
+            loadSettings(); // Reload to confirm
+        } else {
+            showToast('Gagal menyimpan: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error saving settings:', error);
+        showToast('Gagal menyimpan pengaturan', 'error');
+    }
+}
+
+// Test AI Connection
+async function testAIConnection() {
+    const provider = document.querySelector('input[name="ai_provider"]:checked').value;
+    const apiKey = provider === 'openai'
+        ? document.getElementById('openaiApiKey').value
+        : document.getElementById('geminiApiKey').value;
+
+    if (!apiKey) {
+        showToast('Masukkan API key terlebih dahulu', 'error');
+        return;
+    }
+
+    const resultDiv = document.getElementById('testResult');
+    resultDiv.innerHTML = '<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Testing connection...</div>';
+    resultDiv.style.display = 'block';
+
+    try {
+        const response = await fetch('/admin/pengaturan-sistem/test-ai-connection', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                provider: provider,
+                api_key: apiKey
+            })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            resultDiv.innerHTML = `<div class="alert alert-success"><i class="fas fa-check-circle"></i> ${result.message}</div>`;
+            showToast(result.message, 'success');
+        } else {
+            resultDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle"></i> ${result.message}</div>`;
+            showToast('Test gagal: ' + result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error testing connection:', error);
+        resultDiv.innerHTML = '<div class="alert alert-danger"><i class="fas fa-times-circle"></i> Error testing connection</div>';
+        showToast('Error testing connection', 'error');
+    }
+}
+
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = document.getElementById(fieldId + '-icon');
+
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Toast notification - using admin-common.js
+
+// Form submit handler
+document.getElementById('settingsForm').addEventListener('submit', saveSettings);
+
+// Load settings on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadSettings();
+});
+</script>
+{% endblock %}

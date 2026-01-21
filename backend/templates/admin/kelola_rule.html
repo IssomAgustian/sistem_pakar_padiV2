@@ -1,0 +1,837 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Kelola Rule{% endblock %}
+{% block page_title_header %}Kelola Rule{% endblock %}
+{% block page_icon %}code-branch{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-2">
+                            <i class="fas fa-code-branch me-2 text-primary"></i>
+                            Kelola Rule
+                        </h4>
+                        <p class="text-muted mb-0">Manajemen aturan diagnosis penyakit</p>
+                    </div>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fas fa-plus me-2"></i>Tambah Rule
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-5">
+            <div class="stat-card">
+                <label class="form-label fw-bold small text-muted mb-2">FILTER PENYAKIT</label>
+                <select class="form-select" id="diseaseFilter" onchange="applyFilters()">
+                    <option value="">Semua Penyakit</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-5">
+            <div class="stat-card">
+                <label class="form-label fw-bold small text-muted mb-2">FILTER STATUS</label>
+                <select class="form-select" id="statusFilter" onchange="applyFilters()">
+                    <option value="">Semua Status</option>
+                    <option value="active">Aktif</option>
+                    <option value="inactive">Tidak Aktif</option>
+                </select>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <div class="stat-card">
+                <label class="form-label fw-bold small text-muted mb-2">TOTAL</label>
+                <h4 class="mb-0" id="totalCount">
+                    <span class="loading"></span>
+                </h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="table-responsive">
+                    <table class="table table-hover table-sm" id="rulesTable">
+                        <thead>
+                            <tr>
+                                <th width="4%">No</th>
+                                <th width="20%">Penyakit</th>
+                                <th width="36%">Gejala</th>
+                                <th width="12%">Min Match</th>
+                                <th width="10%">Status</th>
+                                <th width="12%">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            <tr>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="loading mx-auto mb-3"></div>
+                                    <p class="text-muted">Memuat data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mt-3">
+                    <div class="text-muted" id="paginationInfo">
+                        Menampilkan 0 dari 0 data
+                    </div>
+                    <nav>
+                        <ul class="pagination mb-0" id="pagination"></ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="ruleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); color: white;">
+                <h5 class="modal-title" id="modalTitle">
+                    <i class="fas fa-plus-circle me-2"></i>Tambah Rule
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="ruleForm">
+                <div class="modal-body">
+                    <input type="hidden" id="ruleId">
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">
+                                Penyakit <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="diseaseSelect" required>
+                                <option value="">Pilih Penyakit</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">
+                                Min Match <span class="text-danger">*</span>
+                            </label>
+                            <input type="number" class="form-control" id="minMatchValue" min="1" step="1" value="3" required>
+                            <small class="text-muted" id="minMatchHint">Minimal dari gejala</small>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">
+                            Gejala <span class="text-danger">*</span>
+                        </label>
+                        <div id="symptomChecklist" class="border rounded p-3 bg-light" style="max-height: 320px; overflow: auto;"></div>
+                        <small class="text-muted">Pilih minimal 1 gejala</small>
+                    </div>
+
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="isActive" checked>
+                        <label class="form-check-label fw-bold" for="isActive">
+                            Rule Aktif
+                        </label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>Batal
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="submitBtn">
+                        <i class="fas fa-save me-1"></i>Simpan
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-info text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-info-circle me-2"></i>Detail Rule
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let perPage = 10;
+let diseaseFilter = '';
+let statusFilter = '';
+let ruleModal, detailModal;
+let allDiseases = [];
+let allSymptoms = [];
+let symptomLookup = new Map();
+let allRules = [];
+let groupedRules = [];
+
+document.addEventListener('DOMContentLoaded', async function() {
+    ruleModal = new bootstrap.Modal(document.getElementById('ruleModal'));
+    detailModal = new bootstrap.Modal(document.getElementById('detailModal'));
+
+    await loadDiseases();
+    await loadSymptoms();
+    await loadRules();
+});
+
+async function loadDiseases() {
+    try {
+        const response = await fetch('/admin/penyakit/list?per_page=200');
+        const result = await response.json();
+
+        if (result.success) {
+            allDiseases = result.data;
+
+            const filterSelect = document.getElementById('diseaseFilter');
+            filterSelect.innerHTML = '<option value="">Semua Penyakit</option>';
+            result.data.forEach(disease => {
+                filterSelect.innerHTML += `<option value="${disease.id}">${escapeHtml(disease.code)} - ${escapeHtml(disease.name)}</option>`;
+            });
+
+            const formSelect = document.getElementById('diseaseSelect');
+            formSelect.innerHTML = '<option value="">Pilih Penyakit</option>';
+            result.data.forEach(disease => {
+                formSelect.innerHTML += `<option value="${disease.id}">${escapeHtml(disease.code)} - ${escapeHtml(disease.name)}</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading diseases:', error);
+    }
+}
+
+async function loadSymptoms() {
+    try {
+        const response = await fetch('/admin/gejala/list?per_page=500');
+        const result = await response.json();
+
+        if (result.success) {
+            allSymptoms = result.data;
+            symptomLookup = new Map(allSymptoms.map(symptom => [symptom.id, symptom]));
+            renderSymptomChecklist([]);
+        }
+    } catch (error) {
+        console.error('Error loading symptoms:', error);
+    }
+}
+
+function applyFilters() {
+    diseaseFilter = document.getElementById('diseaseFilter').value;
+    statusFilter = document.getElementById('statusFilter').value;
+    currentPage = 1;
+    renderFromGroups();
+}
+
+async function loadRules() {
+    try {
+        const response = await fetch('/admin/rule/list?per_page=500');
+        const result = await response.json();
+
+        if (result.success) {
+            allRules = result.data || [];
+            groupedRules = buildGroupedRules(allRules);
+            renderFromGroups();
+        } else {
+            throw new Error('Failed to load data');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        document.getElementById('tableBody').innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center text-danger py-4">
+                    <i class="fas fa-exclamation-triangle fa-2x mb-2 d-block"></i>
+                    Error memuat data
+                </td>
+            </tr>
+        `;
+        document.getElementById('totalCount').textContent = '0';
+        document.getElementById('paginationInfo').textContent = 'Menampilkan 0 dari 0 data';
+        document.getElementById('pagination').innerHTML = '';
+    }
+}
+
+function renderFromGroups() {
+    const filtered = groupedRules.filter(group => {
+        if (diseaseFilter && String(group.disease_id) !== String(diseaseFilter)) {
+            return false;
+        }
+        if (statusFilter === 'active' && !group.is_active) {
+            return false;
+        }
+        if (statusFilter === 'inactive' && group.is_active) {
+            return false;
+        }
+        return true;
+    });
+
+    const total = filtered.length;
+    const pages = total === 0 ? 0 : Math.ceil(total / perPage);
+    if (pages > 0 && currentPage > pages) {
+        currentPage = pages;
+    }
+    if (pages === 0) {
+        currentPage = 1;
+    }
+
+    const startIndex = (currentPage - 1) * perPage;
+    const pageData = filtered.slice(startIndex, startIndex + perPage);
+
+    renderTable(pageData);
+    renderPagination({
+        page: currentPage,
+        per_page: perPage,
+        total: total,
+        pages: pages
+    });
+    document.getElementById('totalCount').textContent = total;
+}
+
+function buildGroupedRules(rules) {
+    const groups = new Map();
+
+    rules.forEach(rule => {
+        const diseaseId = rule.disease_id;
+        if (!groups.has(diseaseId)) {
+            groups.set(diseaseId, {
+                disease_id: diseaseId,
+                disease_code: rule.disease_code || 'N/A',
+                disease_name: rule.disease_name || 'Unknown',
+                rule_code: rule.rule_code || '-',
+                primary_rule_id: rule.id,
+                rules: [],
+                created_at: rule.created_at || null
+            });
+        }
+
+        const group = groups.get(diseaseId);
+        group.rules.push(rule);
+
+        if (rule.rule_code && rule.rule_code < group.rule_code) {
+            group.rule_code = rule.rule_code;
+        }
+        if (rule.id < group.primary_rule_id) {
+            group.primary_rule_id = rule.id;
+        }
+        if (rule.created_at && (!group.created_at || rule.created_at < group.created_at)) {
+            group.created_at = rule.created_at;
+        }
+    });
+
+    return Array.from(groups.values()).map(group => {
+        const symptomMap = new Map();
+        group.rules.forEach(rule => {
+            if (!symptomMap.has(rule.symptom_id)) {
+                symptomMap.set(rule.symptom_id, {
+                    id: rule.symptom_id,
+                    code: rule.symptom_code || '-',
+                    name: rule.symptom_name || 'Unknown',
+                    category: getSymptomCategory(rule.symptom_id)
+                });
+            }
+        });
+
+        const symptoms = Array.from(symptomMap.values())
+            .sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+
+        const minMatch = group.rules.find(item => item.min_symptom_match !== null && item.min_symptom_match !== undefined)
+            ?.min_symptom_match;
+
+        return {
+            ...group,
+            symptoms: symptoms,
+            symptom_count: symptoms.length,
+            min_symptom_match: minMatch !== undefined && minMatch !== null ? minMatch : symptoms.length,
+            is_active: group.rules.every(item => item.is_active)
+        };
+    }).sort((a, b) => (a.disease_code || '').localeCompare(b.disease_code || ''));
+}
+
+function renderTable(groups) {
+    const tbody = document.getElementById('tableBody');
+
+    if (groups.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="6" class="text-center py-5 text-muted">
+                    <i class="fas fa-inbox fa-3x mb-3 d-block opacity-50"></i>
+                    <p class="mb-0">Tidak ada data rule</p>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    tbody.innerHTML = groups.map((group, index) => {
+        const no = (currentPage - 1) * perPage + index + 1;
+        const statusBadge = group.is_active
+            ? '<span class="badge bg-success">Aktif</span>'
+            : '<span class="badge bg-secondary">Tidak Aktif</span>';
+        const minMatchValue = group.min_symptom_match ?? group.symptom_count;
+        const minMatchText = `${minMatchValue} dari ${group.symptom_count}`;
+        const symptomChips = renderSymptomChips(group.symptoms);
+
+        return `
+            <tr style="animation: fadeIn 0.3s ease-in ${index * 0.05}s both;">
+                <td>${no}</td>
+                <td>
+                    <div class="fw-semibold"><span class="badge bg-danger">${escapeHtml(group.disease_code)}</span></div>
+                    <div class="text-muted small">${escapeHtml(group.disease_name)}</div>
+                </td>
+                <td>${symptomChips}</td>
+                <td><span class="badge bg-info">${escapeHtml(minMatchText)}</span></td>
+                <td>${statusBadge}</td>
+                <td>
+                    <div class="btn-group btn-group-sm">
+                        <button class="btn btn-info" onclick="viewDetail(${group.disease_id})" title="Detail">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-warning" onclick="editRule(${group.disease_id})" title="Edit">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn ${group.is_active ? 'btn-secondary' : 'btn-success'}"
+                                onclick="toggleStatus(${group.primary_rule_id}, ${group.is_active}, ${group.disease_id})"
+                                title="${group.is_active ? 'Nonaktifkan' : 'Aktifkan'}">
+                            <i class="fas fa-power-off"></i>
+                        </button>
+                        <button class="btn btn-danger" onclick="deleteRule(${group.primary_rule_id}, ${group.disease_id})" title="Hapus">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function renderPagination(pagination) {
+    const paginationEl = document.getElementById('pagination');
+    const info = document.getElementById('paginationInfo');
+
+    if (!pagination.total) {
+        info.textContent = 'Menampilkan 0 dari 0 data';
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    const start = (pagination.page - 1) * pagination.per_page + 1;
+    const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+    info.textContent = `Menampilkan ${start}-${end} dari ${pagination.total} data`;
+
+    if (pagination.pages <= 1) {
+        paginationEl.innerHTML = '';
+        return;
+    }
+
+    let html = '';
+    html += `
+        <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${pagination.page - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 1 && i <= pagination.page + 1)) {
+            html += `
+                <li class="page-item ${i === pagination.page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="changePage(${i}); return false;">${i}</a>
+                </li>
+            `;
+        } else if (i === pagination.page - 2 || i === pagination.page + 2) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    html += `
+        <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="changePage(${pagination.page + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    paginationEl.innerHTML = html;
+}
+
+function changePage(page) {
+    currentPage = page;
+    renderFromGroups();
+}
+
+function openAddModal() {
+    document.getElementById('ruleForm').reset();
+    document.getElementById('ruleId').value = '';
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2"></i>Tambah Rule';
+    document.getElementById('minMatchValue').value = 3;
+    document.getElementById('isActive').checked = true;
+    renderSymptomChecklist([]);
+    ruleModal.show();
+}
+
+function editRule(diseaseId) {
+    const group = groupedRules.find(item => item.disease_id === diseaseId);
+    if (!group) {
+        showToast('Data tidak ditemukan', 'error');
+        return;
+    }
+
+    const minMatchValue = group.min_symptom_match ?? group.symptom_count ?? 1;
+
+    document.getElementById('ruleId').value = group.primary_rule_id;
+    document.getElementById('diseaseSelect').value = group.disease_id;
+    document.getElementById('minMatchValue').value = minMatchValue;
+    document.getElementById('isActive').checked = group.is_active;
+
+    renderSymptomChecklist(group.symptoms.map(symptom => symptom.id));
+
+    document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2"></i>Edit Rule';
+    ruleModal.show();
+}
+
+function viewDetail(diseaseId) {
+    const group = groupedRules.find(item => item.disease_id === diseaseId);
+    if (!group) {
+        showToast('Data tidak ditemukan', 'error');
+        return;
+    }
+
+    const statusBadge = group.is_active
+        ? '<span class="badge bg-success">Aktif</span>'
+        : '<span class="badge bg-secondary">Tidak Aktif</span>';
+    const minMatchValue = group.min_symptom_match ?? group.symptom_count;
+
+    const symptomsHtml = group.symptoms.map(symptom => `
+        <div class="col-md-6 mb-2">
+            <div class="d-flex align-items-start gap-2">
+                <i class="fas fa-check-circle text-success mt-1"></i>
+                <div>
+                    <span class="badge bg-secondary me-1">${escapeHtml(symptom.code)}</span>
+                    <span>${escapeHtml(symptom.name)}</span>
+                </div>
+            </div>
+        </div>
+    `).join('');
+
+    document.getElementById('detailContent').innerHTML = `
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="fw-bold text-muted small">KODE RULE</label>
+                <div class="h5"><span class="badge bg-success">${escapeHtml(group.rule_code)}</span></div>
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold text-muted small">STATUS</label>
+                <div>${statusBadge}</div>
+            </div>
+            <div class="col-12">
+                <label class="fw-bold text-muted small">PENYAKIT</label>
+                <div class="border rounded p-2 bg-light">
+                    <span class="badge bg-danger me-2">${escapeHtml(group.disease_code)}</span>
+                    <strong>${escapeHtml(group.disease_name)}</strong>
+                </div>
+            </div>
+            <div class="col-12">
+                <label class="fw-bold text-muted small">GEJALA (${group.symptom_count})</label>
+                <div class="border rounded p-2 bg-light">
+                    <div class="row">
+                        ${symptomsHtml || '<div class="text-muted">Tidak ada gejala.</div>'}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold text-muted small">MIN MATCH</label>
+                <div><span class="badge bg-info fs-6">${escapeHtml(`${minMatchValue} dari ${group.symptom_count}`)}</span></div>
+            </div>
+            <div class="col-md-6">
+                <label class="fw-bold text-muted small">DIBUAT</label>
+                <div class="text-muted">${escapeHtml(formatDate(group.created_at))}</div>
+            </div>
+        </div>
+    `;
+    detailModal.show();
+}
+
+function toggleStatus(ruleId, isActive, diseaseId) {
+    const group = groupedRules.find(item => item.disease_id === diseaseId);
+    const diseaseCode = group ? group.disease_code : 'N/A';
+    const action = isActive ? 'menonaktifkan' : 'mengaktifkan';
+    const actionCapital = isActive ? 'Nonaktifkan' : 'Aktifkan';
+    const type = isActive ? 'warning' : 'success';
+
+    confirmAction({
+        title: `${actionCapital} Rule`,
+        message: `Apakah Anda yakin ingin <strong>${action}</strong> rule penyakit <strong>"${escapeHtml(diseaseCode)}"</strong>?`,
+        confirmText: `Ya, ${actionCapital}`,
+        cancelText: 'Batal',
+        type: type,
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/admin/rule/${ruleId}/toggle-status`, {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ disease_id: diseaseId })
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadRules();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error mengubah status', 'error');
+            }
+        }
+    });
+}
+
+function deleteRule(ruleId, diseaseId) {
+    const group = groupedRules.find(item => item.disease_id === diseaseId);
+    const diseaseCode = group ? group.disease_code : 'N/A';
+
+    confirmAction({
+        title: 'Hapus Rule',
+        message: `Apakah Anda yakin ingin menghapus rule penyakit <strong>"${escapeHtml(diseaseCode)}"</strong>?<br><small class="text-danger">Data akan dihapus permanen dan tidak dapat dikembalikan.</small>`,
+        confirmText: 'Ya, Hapus',
+        cancelText: 'Batal',
+        type: 'danger',
+        onConfirm: async () => {
+            try {
+                const response = await fetch(`/admin/rule/${ruleId}?disease_id=${diseaseId}`, { method: 'DELETE' });
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(result.message, 'success');
+                    loadRules();
+                } else {
+                    showToast(result.message, 'error');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                showToast('Error menghapus data', 'error');
+            }
+        }
+    });
+}
+
+document.getElementById('ruleForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+
+    const id = document.getElementById('ruleId').value;
+    const diseaseId = parseInt(document.getElementById('diseaseSelect').value, 10);
+    const minMatchValue = parseInt(document.getElementById('minMatchValue').value, 10);
+    const symptomIds = getSelectedSymptomIds();
+
+    if (!diseaseId) {
+        showToast('Pilih penyakit', 'error');
+        return;
+    }
+    if (!symptomIds.length) {
+        showToast('Pilih minimal 1 gejala', 'error');
+        return;
+    }
+    if (!minMatchValue || minMatchValue < 1) {
+        showToast('Min match minimal 1', 'error');
+        return;
+    }
+    if (minMatchValue > symptomIds.length) {
+        showToast('Min match tidak boleh melebihi jumlah gejala', 'error');
+        return;
+    }
+
+    const data = {
+        disease_id: diseaseId,
+        symptom_ids: symptomIds,
+        min_symptom_match: minMatchValue,
+        is_active: document.getElementById('isActive').checked
+    };
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<span class="loading"></span> Menyimpan...';
+
+    try {
+        const url = id ? `/admin/rule/${id}` : '/admin/rule/create';
+        const method = id ? 'PUT' : 'POST';
+
+        const response = await fetch(url, {
+            method: method,
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            showToast(result.message, 'success');
+            ruleModal.hide();
+            loadRules();
+        } else {
+            showToast(result.message, 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error menyimpan data', 'error');
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i>Simpan';
+    }
+});
+
+function renderSymptomChecklist(selectedIds) {
+    const container = document.getElementById('symptomChecklist');
+    if (!container) {
+        return;
+    }
+
+    if (!allSymptoms.length) {
+        container.innerHTML = '<p class="text-muted mb-0">Data gejala belum tersedia.</p>';
+        return;
+    }
+
+    const selectedSet = new Set((selectedIds || []).map(item => Number(item)));
+    const grouped = groupSymptomsByCategory(allSymptoms);
+    const order = ['daun', 'batang', 'akar', 'bulir', 'malai', 'pertumbuhan', 'lainnya'];
+    const categories = Object.keys(grouped).sort((a, b) => {
+        const aIndex = order.indexOf(a);
+        const bIndex = order.indexOf(b);
+        if (aIndex === -1 && bIndex === -1) {
+            return a.localeCompare(b);
+        }
+        if (aIndex === -1) {
+            return 1;
+        }
+        if (bIndex === -1) {
+            return -1;
+        }
+        return aIndex - bIndex;
+    });
+
+    let html = '<div class="row">';
+    categories.forEach(category => {
+        const items = grouped[category].sort((a, b) => (a.code || '').localeCompare(b.code || ''));
+        html += `
+            <div class="col-md-6 mb-3">
+                <div class="d-flex align-items-center mb-2">
+                    <i class="fas fa-tag text-success me-2"></i>
+                    <span class="fw-semibold text-capitalize">${escapeHtml(category)}</span>
+                </div>
+                ${items.map(symptom => {
+                    const inputId = `symptom-${symptom.id}`;
+                    const checked = selectedSet.has(symptom.id) ? 'checked' : '';
+                    return `
+                        <div class="form-check mb-2">
+                            <input class="form-check-input symptom-checkbox" type="checkbox" id="${inputId}" value="${symptom.id}" ${checked}>
+                            <label class="form-check-label" for="${inputId}">
+                                <span class="badge bg-secondary me-1">${escapeHtml(symptom.code)}</span>
+                                ${escapeHtml(symptom.name)}
+                            </label>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+
+    container.querySelectorAll('.symptom-checkbox').forEach(input => {
+        input.addEventListener('change', updateMinMatchHint);
+    });
+    updateMinMatchHint();
+}
+
+function groupSymptomsByCategory(symptoms) {
+    return symptoms.reduce((accumulator, symptom) => {
+        const key = (symptom.category || 'lainnya').toLowerCase();
+        if (!accumulator[key]) {
+            accumulator[key] = [];
+        }
+        accumulator[key].push(symptom);
+        return accumulator;
+    }, {});
+}
+
+function getSelectedSymptomIds() {
+    return Array.from(document.querySelectorAll('#symptomChecklist input.symptom-checkbox:checked'))
+        .map(input => parseInt(input.value, 10))
+        .filter(value => !Number.isNaN(value));
+}
+
+function updateMinMatchHint() {
+    const minMatchInput = document.getElementById('minMatchValue');
+    const hint = document.getElementById('minMatchHint');
+    const selectedCount = getSelectedSymptomIds().length;
+
+    if (hint) {
+        hint.textContent = `Minimal dari ${selectedCount} gejala`;
+    }
+
+    if (minMatchInput && selectedCount) {
+        minMatchInput.max = selectedCount;
+        const currentValue = parseInt(minMatchInput.value, 10);
+        if (currentValue > selectedCount) {
+            minMatchInput.value = selectedCount;
+        }
+    }
+}
+
+function renderSymptomChips(symptoms) {
+    if (!symptoms.length) {
+        return '<span class="text-muted">-</span>';
+    }
+
+    const visible = symptoms.slice(0, 3);
+    const extra = symptoms.length - visible.length;
+
+    const chips = visible.map(symptom => `
+        <span class="badge bg-secondary me-1" title="${escapeHtml(symptom.name)}">${escapeHtml(symptom.code)}</span>
+    `).join('');
+
+    const more = extra > 0
+        ? `<span class="badge bg-light text-dark border">+${extra} lagi</span>`
+        : '';
+
+    return `${chips}${more}`;
+}
+
+function formatDate(value) {
+    if (!value) {
+        return '-';
+    }
+    const normalized = value.includes(' ') ? value.replace(' ', 'T') : value;
+    const date = new Date(normalized);
+    if (Number.isNaN(date.getTime())) {
+        return value;
+    }
+    return date.toLocaleDateString('id-ID');
+}
+
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getSymptomCategory(symptomId) {
+    const symptom = symptomLookup.get(symptomId);
+    return symptom && symptom.category ? symptom.category : 'lainnya';
+}
+</script>
+{% endblock %}

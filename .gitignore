@@ -1,0 +1,252 @@
+# ============================================
+# ROOT .GITIGNORE - Sistem Pakar Padi
+# ============================================
+
+# ============================================
+# SENSITIVE DATA & CREDENTIALS
+# ============================================
+# Environment files with API keys and secrets
+.env
+.env.local
+.env.*.local
+*.env
+backend/.env
+frontend/.env
+
+# API Keys & Credentials
+**/credentials.json
+**/service-account*.json
+**/*secret*.json
+
+# Session & Cookies
+cookies.txt
+cookies_bad.txt
+*.cookies
+
+# ============================================
+# DATABASE FILES
+# ============================================
+# SQLite databases (development)
+*.db
+*.sqlite
+*.sqlite3
+backend/instance/*.db
+backend/instance/*.sqlite*
+
+# Database backups
+*.sql
+*.dump
+*.bak
+
+# ============================================
+# PYTHON (BACKEND)
+# ============================================
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Virtual environments
+venv/
+env/
+ENV/
+backend/venv/
+backend/env/
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Flask specific
+instance/
+.webassets-cache
+
+# Testing
+.coverage
+.tox/
+.nox/
+htmlcov/
+.pytest_cache/
+.hypothesis/
+nosetests.xml
+coverage.xml
+*.cover
+.cache
+
+# ============================================
+# NODE.JS (FRONTEND)
+# ============================================
+# Dependencies
+node_modules/
+frontend/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Production builds
+/build
+/dist
+frontend/build/
+frontend/dist/
+
+# Package manager files
+.npm
+.eslintcache
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp
+.pnp.js
+
+# ============================================
+# LOGS & TEMPORARY FILES
+# ============================================
+# Application logs
+*.log
+logs/
+backend/*.log
+frontend/*.log
+backend_server.log
+frontend_dev.log
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ============================================
+# IDE & EDITOR FILES
+# ============================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm / IntelliJ
+.idea/
+*.iml
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# ============================================
+# OS FILES
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# ============================================
+# DOCKER & DEPLOYMENT
+# ============================================
+# Docker volumes
+docker-compose.override.yml
+.dockerignore
+
+# Deployment artifacts
+*.tar
+*.tar.gz
+*.zip
+*.rar
+
+# ============================================
+# UPLOADS & USER GENERATED CONTENT
+# ============================================
+backend/static/uploads/**/*
+!backend/static/uploads/.gitkeep
+backend/static/uploads/pdf_exports/**/*
+!backend/static/uploads/pdf_exports/.gitkeep
+
+# ============================================
+# TEST FILES (ROOT DIRECTORY ONLY)
+# ============================================
+# API test files that should be in backend/tests/
+test_openai.py
+test_gemini.py
+test_gemini_api_endpoint.py
+list_gemini_models.py
+
+# ============================================
+# DOCUMENTATION DRAFTS
+# ============================================
+# Keep only final docs
+*.draft.md
+*_backup.md
+*_old.md
+
+# ============================================
+# MIGRATIONS (OPTIONAL)
+# ============================================
+# Uncomment if you want to exclude migration files
+# backend/migrations/versions/*.py
+# !backend/migrations/versions/__init__.py
+
+# ============================================
+# MISC
+# ============================================
+# Package lock files (choose one strategy)
+# Option 1: Keep both (recommended for teams)
+# Option 2: Ignore one (uncomment below)
+# package-lock.json
+# yarn.lock
+
+# Claude Code settings (keep local only)
+.claude/settings.local.json
+
+# Jupyter Notebooks checkpoints
+.ipynb_checkpoints/
+*.ipynb
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Local configuration
+config.local.*
+settings.local.*

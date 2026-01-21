@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laporan Diagnosis Penyakit Tanaman Padi</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .header {
+            text-align: center;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #4CAF50;
+            margin: 0;
+            font-size: 24pt;
+        }
+
+        .header p {
+            margin: 5px 0;
+            color: #666;
+        }
+
+        .info-section {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .info-row {
+            display: flex;
+            margin-bottom: 10px;
+        }
+
+        .info-label {
+            font-weight: bold;
+            width: 150px;
+            color: #555;
+        }
+
+        .info-value {
+            flex: 1;
+        }
+
+        .result-box {
+            background-color: #e8f5e9;
+            border-left: 4px solid #4CAF50;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .result-box h2 {
+            color: #2e7d32;
+            margin-top: 0;
+            font-size: 20pt;
+        }
+
+        .confidence-badge {
+            display: inline-block;
+            background-color: #4CAF50;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14pt;
+        }
+
+        .section {
+            margin: 25px 0;
+            page-break-inside: avoid;
+        }
+
+        .section-title {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 14pt;
+        }
+
+        .section-content {
+            padding: 10px;
+            background-color: #fafafa;
+            border-radius: 5px;
+        }
+
+        ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        ul li {
+            padding: 8px 0;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        ul li:before {
+            content: "✓ ";
+            color: #4CAF50;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+
+        .medication-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .medication-item {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 12px;
+        }
+
+        .medication-item h4 {
+            color: #4CAF50;
+            margin: 0 0 5px 0;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #4CAF50;
+            text-align: center;
+            font-size: 9pt;
+            color: #666;
+        }
+
+        .disclaimer {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+        }
+
+        .disclaimer strong {
+            color: #856404;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header">
+        <h1>🌾 Sistem Pakar Diagnosis Penyakit Tanaman Padi</h1>
+        <p>Laporan Hasil Diagnosis</p>
+        <p style="font-size: 10pt;">Tanggal: {{ diagnosis_date }}</p>
+    </div>
+
+    <!-- Report Information -->
+    <div class="info-section">
+        <div class="info-row">
+            <span class="info-label">Nomor Laporan:</span>
+            <span class="info-value">#{{ history.id }}</span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Metode Diagnosis:</span>
+            <span class="info-value">
+                {% if history.diagnosis_method == 'forward_chaining' %}
+                    Forward Chaining
+                {% else %}
+                    Certainty Factor
+                {% endif %}
+            </span>
+        </div>
+        <div class="info-row">
+            <span class="info-label">Tingkat Keyakinan:</span>
+            <span class="info-value">{{ history.certainty_level }}</span>
+        </div>
+    </div>
+
+    <!-- Diagnosis Result -->
+    <div class="result-box">
+        <h2>Hasil Diagnosis</h2>
+        <h3 style="color: #1b5e20; margin: 10px 0;">{{ disease.name }}</h3>
+        <p><strong>Kode Penyakit:</strong> {{ disease.code }}</p>
+        <p><strong>Nilai Certainty Factor:</strong>
+            <span class="confidence-badge">{{ "%.1f"|format(history.final_cf_value * 100) }}%</span>
+        </p>
+        {% if disease.description %}
+        <p style="margin-top: 15px;"><strong>Deskripsi:</strong></p>
+        <p>{{ disease.description }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Treatment Steps -->
+    {% if ai_solution and ai_solution.langkah_penanganan %}
+    <div class="section">
+        <div class="section-title">1. Langkah Penanganan</div>
+        <div class="section-content">
+            <ul>
+                {% for step in ai_solution.langkah_penanganan %}
+                <li>{{ step }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Medication Recommendations -->
+    {% if ai_solution and ai_solution.rekomendasi_obat %}
+    <div class="section">
+        <div class="section-title">2. Rekomendasi Obat</div>
+        <div class="section-content">
+            <div class="medication-grid">
+                {% for obat in ai_solution.rekomendasi_obat %}
+                <div class="medication-item">
+                    <h4>💊 {{ obat.nama }}</h4>
+                    <p><strong>Dosis:</strong> {{ obat.dosis }}</p>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Usage Guidelines -->
+    {% if ai_solution and ai_solution.panduan_penggunaan %}
+    <div class="section">
+        <div class="section-title">3. Panduan Penggunaan</div>
+        <div class="section-content">
+            <ul>
+                {% for guide in ai_solution.panduan_penggunaan %}
+                <li>{{ guide }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <strong>⚠️ Catatan Penting:</strong><br>
+        Hasil diagnosis ini bersifat indikatif dan sebagai panduan awal.
+        Untuk penanganan yang tepat dan akurat, sangat disarankan untuk berkonsultasi
+        dengan ahli pertanian atau petugas penyuluh lapangan di daerah Anda.
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p>Sistem Pakar Diagnosis Penyakit Tanaman Padi</p>
+        <p>Dokumen ini dibuat secara otomatis oleh sistem</p>
+    </div>
+</body>
+</html>

@@ -1,0 +1,647 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Riwayat Diagnosis{% endblock %}
+{% block page_title_header %}Riwayat Diagnosis{% endblock %}
+{% block page_icon %}history{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-2">
+                        <i class="fas fa-history me-2 text-success"></i>
+                        Riwayat Diagnosis
+                    </h2>
+                    <p class="text-muted mb-0">Monitor semua riwayat diagnosis pengguna sistem</p>
+                </div>
+                <button class="btn btn-success" onclick="exportToCSV()">
+                    <i class="fas fa-file-csv me-2"></i>Export CSV
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stat-card">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    Filter Pencarian
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-2">
+                        <label class="form-label">Tanggal Mulai</label>
+                        <input type="date" class="form-control" id="startDateFilter">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Tanggal Akhir</label>
+                        <input type="date" class="form-control" id="endDateFilter">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Penyakit</label>
+                        <select class="form-select" id="diseaseFilter">
+                            <option value="">Semua Penyakit</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Metode</label>
+                        <select class="form-select" id="methodFilter">
+                            <option value="">Semua Metode</option>
+                            <option value="forward_chaining">Forward Chaining</option>
+                            <option value="certainty_factor">Certainty Factor</option>
+                            <option value="hybrid">Hybrid</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Cari User</label>
+                        <input type="text" class="form-control" id="userSearchFilter" placeholder="Email user...">
+                    </div>
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button class="btn btn-primary me-2" onclick="applyFilters()">
+                            <i class="fas fa-search"></i>
+                        </button>
+                        <button class="btn btn-secondary" onclick="resetFilters()">
+                            <i class="fas fa-redo"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnosis Table -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2 text-info"></i>
+                        Daftar Riwayat
+                        <span class="badge bg-primary ms-2" id="totalCount">0</span>
+                    </h5>
+                </div>
+
+                <!-- Loading State -->
+                <div id="loadingState" class="text-center py-5">
+                    <div class="loading mx-auto mb-3" style="width: 40px; height: 40px;"></div>
+                    <p class="text-muted">Memuat data riwayat...</p>
+                </div>
+
+                <!-- Table -->
+                <div id="tableContainer" style="display: none;">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th style="width: 50px;">No</th>
+                                    <th>Tanggal</th>
+                                    <th>User Email</th>
+                                    <th>Penyakit</th>
+                                    <th style="width: 120px;">Confidence</th>
+                                    <th>Metode</th>
+                                    <th style="width: 100px;">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody id="historyTableBody">
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination -->
+                    <div class="d-flex justify-content-between align-items-center mt-4">
+                        <div class="text-muted" id="paginationInfo">
+                            Menampilkan 0 dari 0 data
+                        </div>
+                        <nav>
+                            <ul class="pagination mb-0" id="paginationButtons">
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+
+                <!-- Empty State -->
+                <div id="emptyState" style="display: none;" class="text-center py-5">
+                    <i class="fas fa-clipboard fa-4x text-muted mb-3"></i>
+                    <h5 class="text-muted">Tidak ada riwayat diagnosis</h5>
+                    <p class="text-muted">Belum ada diagnosis yang dilakukan di sistem</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal View Detail -->
+<div class="modal fade" id="detailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title">
+                    <i class="fas fa-clipboard-check me-2"></i>
+                    Detail Diagnosis
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="detailLoadingState" class="text-center py-4">
+                    <div class="loading mx-auto mb-3"></div>
+                    <p class="text-muted">Memuat detail...</p>
+                </div>
+                <div id="detailContent" style="display: none;">
+                    <!-- User Info -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-user me-2"></i>Informasi Pengguna
+                            </h6>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Email</label>
+                            <p class="fw-bold" id="detailUserEmail">-</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted small">Tanggal Diagnosis</label>
+                            <p class="fw-bold" id="detailDate">-</p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Diagnosis Result -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-virus me-2"></i>Hasil Diagnosis
+                            </h6>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Penyakit Terdeteksi</label>
+                            <p class="fw-bold"><span class="badge bg-danger" id="detailDisease" style="font-size: 1rem;">-</span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Tingkat Kepercayaan (CF)</label>
+                            <p class="fw-bold"><span class="badge bg-success" id="detailConfidence" style="font-size: 1rem;">-</span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="text-muted small">Metode Diagnosis</label>
+                            <p class="fw-bold"><span class="badge bg-info" id="detailMethod" style="font-size: 1rem;">-</span></p>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Symptoms Detected -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-stethoscope me-2"></i>Gejala yang Terdeteksi
+                            </h6>
+                            <div id="detailSymptoms" class="row">
+                                <!-- Symptoms will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- AI Solution -->
+                    <div class="row mb-4" id="aiSolutionSection" style="display: none;">
+                        <div class="col-12">
+                            <h6 class="text-muted mb-3">
+                                <i class="fas fa-brain me-2"></i>Solusi AI
+                            </h6>
+                            <div class="alert alert-info">
+                                <div id="detailAISolution" style="white-space: pre-wrap;">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentPage = 1;
+let currentFilters = {
+    start_date: '',
+    end_date: '',
+    disease_id: '',
+    method: '',
+    user_search: ''
+};
+let allDiseases = [];
+
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadDiseases();
+    loadHistory(1);
+});
+
+// Load diseases for filter
+async function loadDiseases() {
+    try {
+        const response = await fetch('/api/diseases');
+        const result = await response.json();
+
+        if (result.success) {
+            allDiseases = result.data;
+            const diseaseSelect = document.getElementById('diseaseFilter');
+            diseaseSelect.innerHTML = '<option value="">Semua Penyakit</option>';
+            allDiseases.forEach(disease => {
+                diseaseSelect.innerHTML += `<option value="${disease.id}">${disease.name}</option>`;
+            });
+        }
+    } catch (error) {
+        console.error('Error loading diseases:', error);
+    }
+}
+
+// Apply filters
+function applyFilters() {
+    currentFilters.start_date = document.getElementById('startDateFilter').value;
+    currentFilters.end_date = document.getElementById('endDateFilter').value;
+    currentFilters.disease_id = document.getElementById('diseaseFilter').value;
+    currentFilters.method = document.getElementById('methodFilter').value;
+    currentFilters.user_search = document.getElementById('userSearchFilter').value;
+    loadHistory(1);
+}
+
+// Reset filters
+function resetFilters() {
+    document.getElementById('startDateFilter').value = '';
+    document.getElementById('endDateFilter').value = '';
+    document.getElementById('diseaseFilter').value = '';
+    document.getElementById('methodFilter').value = '';
+    document.getElementById('userSearchFilter').value = '';
+    currentFilters = { start_date: '', end_date: '', disease_id: '', method: '', user_search: '' };
+    loadHistory(1);
+}
+
+// Load history from API
+async function loadHistory(page) {
+    currentPage = page;
+
+    // Show loading
+    document.getElementById('loadingState').style.display = 'block';
+    document.getElementById('tableContainer').style.display = 'none';
+    document.getElementById('emptyState').style.display = 'none';
+
+    try {
+        const params = new URLSearchParams({
+            page: page,
+            per_page: 20,
+            start_date: currentFilters.start_date,
+            end_date: currentFilters.end_date,
+            disease_id: currentFilters.disease_id,
+            method: currentFilters.method,
+            user_search: currentFilters.user_search
+        });
+
+        const response = await fetch(`/admin/riwayat/list?${params}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to load history');
+        }
+
+        const history = result.data;
+        const pagination = result.pagination;
+
+        // Update total count
+        document.getElementById('totalCount').textContent = pagination.total;
+
+        if (history.length === 0) {
+            document.getElementById('loadingState').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            return;
+        }
+
+        // Render table
+        renderHistoryTable(history, pagination);
+
+        // Show table
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('tableContainer').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading history:', error);
+        showToast('Gagal memuat riwayat: ' + error.message, 'error');
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('emptyState').style.display = 'block';
+    }
+}
+
+// Render history table
+function renderHistoryTable(history, pagination) {
+    const tbody = document.getElementById('historyTableBody');
+    const startNum = (pagination.page - 1) * pagination.per_page;
+
+    tbody.innerHTML = history.map((item, index) => {
+        const num = startNum + index + 1;
+        const confidence = item.final_cf_value ? (item.final_cf_value * 100).toFixed(1) : 0;
+
+        // Badge colors based on confidence
+        let confidenceBadge = 'bg-success';
+        if (confidence < 50) confidenceBadge = 'bg-danger';
+        else if (confidence < 70) confidenceBadge = 'bg-warning';
+
+        // Method badge
+        let methodText = item.diagnosis_method || 'Hybrid';
+        if (methodText === 'forward_chaining') methodText = 'Forward Chaining';
+        else if (methodText === 'certainty_factor') methodText = 'Certainty Factor';
+
+        const diseaseName = item.disease ? item.disease.name : 'Unknown';
+        const userEmail = item.user_id ? 'User #' + item.user_id : 'Anonymous';
+        const date = item.diagnosis_date ? formatDateTime(item.diagnosis_date) : '-';
+
+        return `
+            <tr style="animation: fadeIn 0.3s ease-in ${index * 0.05}s; animation-fill-mode: backwards;">
+                <td>${num}</td>
+                <td><small>${date}</small></td>
+                <td><i class="fas fa-user me-2 text-muted"></i><span id="userEmail-${item.id}">${userEmail}</span></td>
+                <td><span class="badge bg-danger">${diseaseName}</span></td>
+                <td><span class="badge ${confidenceBadge}">${confidence}%</span></td>
+                <td><span class="badge bg-info">${methodText}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-success" onclick="viewDetail(${item.id})" title="View Detail">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    // Load user emails
+    history.forEach(item => {
+        if (item.user_id) {
+            loadUserEmail(item.id, item.user_id);
+        }
+    });
+
+    // Render pagination
+    renderPagination(pagination);
+}
+
+// Load user email
+async function loadUserEmail(historyId, userId) {
+    try {
+        const response = await fetch(`/admin/pengguna/${userId}`);
+        const result = await response.json();
+
+        if (result.success) {
+            const emailElement = document.getElementById(`userEmail-${historyId}`);
+            if (emailElement) {
+                emailElement.textContent = result.data.email;
+            }
+        }
+    } catch (error) {
+        console.error('Error loading user email:', error);
+    }
+}
+
+// Render pagination
+function renderPagination(pagination) {
+    const info = document.getElementById('paginationInfo');
+    const buttons = document.getElementById('paginationButtons');
+
+    const start = (pagination.page - 1) * pagination.per_page + 1;
+    const end = Math.min(pagination.page * pagination.per_page, pagination.total);
+    info.textContent = `Menampilkan ${start}-${end} dari ${pagination.total} data`;
+
+    let html = '';
+
+    // Previous button
+    html += `
+        <li class="page-item ${pagination.page === 1 ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadHistory(${pagination.page - 1}); return false;">
+                <i class="fas fa-chevron-left"></i>
+            </a>
+        </li>
+    `;
+
+    // Page numbers
+    for (let i = 1; i <= pagination.pages; i++) {
+        if (i === 1 || i === pagination.pages || (i >= pagination.page - 2 && i <= pagination.page + 2)) {
+            html += `
+                <li class="page-item ${i === pagination.page ? 'active' : ''}">
+                    <a class="page-link" href="#" onclick="loadHistory(${i}); return false;">${i}</a>
+                </li>
+            `;
+        } else if (i === pagination.page - 3 || i === pagination.page + 3) {
+            html += '<li class="page-item disabled"><span class="page-link">...</span></li>';
+        }
+    }
+
+    // Next button
+    html += `
+        <li class="page-item ${pagination.page === pagination.pages ? 'disabled' : ''}">
+            <a class="page-link" href="#" onclick="loadHistory(${pagination.page + 1}); return false;">
+                <i class="fas fa-chevron-right"></i>
+            </a>
+        </li>
+    `;
+
+    buttons.innerHTML = html;
+}
+
+// View diagnosis detail
+async function viewDetail(historyId) {
+    const modal = new bootstrap.Modal(document.getElementById('detailModal'));
+    modal.show();
+
+    // Show loading
+    document.getElementById('detailLoadingState').style.display = 'block';
+    document.getElementById('detailContent').style.display = 'none';
+
+    try {
+        const response = await fetch(`/admin/riwayat/${historyId}`);
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error(result.message || 'Failed to load detail');
+        }
+
+        const item = result.data;
+
+        // Populate modal - User Info
+        if (item.user_id) {
+            const userResponse = await fetch(`/admin/pengguna/${item.user_id}`);
+            const userResult = await userResponse.json();
+            if (userResult.success) {
+                document.getElementById('detailUserEmail').textContent = userResult.data.email;
+            }
+        } else {
+            document.getElementById('detailUserEmail').textContent = 'Anonymous';
+        }
+
+        document.getElementById('detailDate').textContent = formatDateTime(item.diagnosis_date);
+
+        // Diagnosis Result
+        const diseaseName = item.disease ? item.disease.name : 'Unknown';
+        document.getElementById('detailDisease').textContent = diseaseName;
+
+        const confidence = item.final_cf_value ? (item.final_cf_value * 100).toFixed(1) : 0;
+        document.getElementById('detailConfidence').textContent = confidence + '%';
+
+        let methodText = item.diagnosis_method || 'Hybrid';
+        if (methodText === 'forward_chaining') methodText = 'Forward Chaining';
+        else if (methodText === 'certainty_factor') methodText = 'Certainty Factor';
+        document.getElementById('detailMethod').textContent = methodText;
+
+        // Symptoms
+        await loadSymptoms(item);
+
+        // AI Solution
+        if (item.ai_solution) {
+            document.getElementById('aiSolutionSection').style.display = 'block';
+            document.getElementById('detailAISolution').textContent = item.ai_solution;
+        } else {
+            document.getElementById('aiSolutionSection').style.display = 'none';
+        }
+
+        // Show content
+        document.getElementById('detailLoadingState').style.display = 'none';
+        document.getElementById('detailContent').style.display = 'block';
+
+    } catch (error) {
+        console.error('Error loading detail:', error);
+        showToast('Gagal memuat detail: ' + error.message, 'error');
+        modal.hide();
+    }
+}
+
+// Load symptoms
+async function loadSymptoms(item) {
+    const symptomsContainer = document.getElementById('detailSymptoms');
+
+    if (!item.selected_symptoms || item.selected_symptoms.length === 0) {
+        symptomsContainer.innerHTML = '<div class="col-12"><p class="text-muted">Tidak ada gejala</p></div>';
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/symptoms');
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error('Failed to load symptoms');
+        }
+
+        const allSymptoms = result.data;
+        const selectedSymptomIds = item.selected_symptoms;
+        const cfValues = item.cf_values || {};
+
+        let html = '';
+        selectedSymptomIds.forEach(symptomId => {
+            const symptom = allSymptoms.find(s => s.id === symptomId);
+            if (symptom) {
+                const cfValue = cfValues[symptomId] || 0;
+                const cfPercent = (cfValue * 100).toFixed(1);
+                html += `
+                    <div class="col-md-6 mb-2">
+                        <div class="alert alert-light mb-0">
+                            <i class="fas fa-check-circle text-success me-2"></i>
+                            <strong>${symptom.name}</strong>
+                            <span class="badge bg-primary float-end">CF: ${cfPercent}%</span>
+                        </div>
+                    </div>
+                `;
+            }
+        });
+
+        symptomsContainer.innerHTML = html;
+
+    } catch (error) {
+        console.error('Error loading symptoms:', error);
+        symptomsContainer.innerHTML = '<div class="col-12"><p class="text-danger">Error loading symptoms</p></div>';
+    }
+}
+
+// Export to CSV
+async function exportToCSV() {
+    try {
+        const params = new URLSearchParams({
+            start_date: currentFilters.start_date,
+            end_date: currentFilters.end_date,
+            disease_id: currentFilters.disease_id,
+            method: currentFilters.method,
+            user_search: currentFilters.user_search
+        });
+
+        window.location.href = `/admin/riwayat/export?${params}`;
+        showToast('Export CSV berhasil dimulai', 'success');
+
+    } catch (error) {
+        console.error('Error exporting CSV:', error);
+        showToast('Gagal export CSV: ' + error.message, 'error');
+    }
+}
+
+// Format date
+function formatDate(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    });
+}
+
+// Format datetime
+function formatDateTime(dateString) {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+}
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.loading {
+    border: 3px solid rgba(22, 163, 74, 0.2);
+    border-top-color: #16a34a;
+}
+
+.pagination .page-link {
+    color: #16a34a;
+    border: 1px solid #e5e7eb;
+    margin: 0 2px;
+    border-radius: 8px;
+}
+
+.pagination .page-link:hover {
+    background-color: #f3f4f6;
+}
+
+.pagination .page-item.active .page-link {
+    background: linear-gradient(135deg, #16a34a, #15803d);
+    border-color: #16a34a;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+    font-size: 0.875rem;
+}
+
+.alert-light {
+    background-color: #f8f9fa;
+    border-left: 3px solid #16a34a;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,253 @@
+{% extends "admin/layout.html" %}
+{% block page_title %}Pengaturan Admin{% endblock %}
+{% block page_title_header %}Pengaturan Admin{% endblock %}
+
+{% block admin_content %}
+<style>
+    .password-input-wrapper {
+        position: relative;
+    }
+
+    .password-toggle {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        cursor: pointer;
+        color: #64748b;
+        transition: color 0.2s;
+    }
+
+    .password-toggle:hover {
+        color: var(--primary-green);
+    }
+
+    .form-actions {
+        margin-top: 24px;
+        padding-top: 20px;
+        border-top: 1px solid #e2e8f0;
+    }
+</style>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h2>Pengaturan Profil Admin</h2>
+        <p class="text-muted">Ubah informasi akun admin</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h3 class="content-card-title">Informasi Profil</h3>
+            </div>
+            <div class="content-card-body">
+                <form id="profile-form">
+                    <div class="form-group">
+                        <label for="full_name" class="form-label">Nama Lengkap</label>
+                        <input type="text" id="full_name" class="form-control" name="full_name" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" id="email" class="form-control" name="email" required>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Update Profil
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="content-card">
+            <div class="content-card-header">
+                <h3 class="content-card-title">Ubah Password</h3>
+            </div>
+            <div class="content-card-body">
+                <form id="password-form">
+                    <div class="form-group">
+                        <label for="current_password" class="form-label">Password Lama</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="current_password" class="form-control" name="current_password" required>
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('current_password')"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="new_password" class="form-label">Password Baru</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="new_password" class="form-control" name="new_password" required>
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('new_password')"></i>
+                        </div>
+                        <small class="text-muted">Min 8 karakter, harus ada huruf besar, kecil, dan angka (tanpa spasi)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="confirm_password" class="form-label">Konfirmasi Password</label>
+                        <div class="password-input-wrapper">
+                            <input type="password" id="confirm_password" class="form-control" name="confirm_password" required>
+                            <i class="fas fa-eye password-toggle" onclick="togglePassword('confirm_password')"></i>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-key"></i> Ubah Password
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Toggle password visibility
+function togglePassword(fieldId) {
+    const field = document.getElementById(fieldId);
+    const icon = field.nextElementSibling;
+
+    if (field.type === 'password') {
+        field.type = 'text';
+        icon.classList.remove('fa-eye');
+        icon.classList.add('fa-eye-slash');
+    } else {
+        field.type = 'password';
+        icon.classList.remove('fa-eye-slash');
+        icon.classList.add('fa-eye');
+    }
+}
+
+// Load current admin data
+async function loadAdminData() {
+    try {
+        const response = await fetch('/admin/api/profile');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('full_name').value = data.full_name || '';
+            document.getElementById('email').value = data.email || '';
+        }
+    } catch (error) {
+        console.error('Error loading admin data:', error);
+    }
+}
+
+// Handle profile update
+document.getElementById('profile-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const fullName = document.getElementById('full_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+        showToast('Format email tidak valid', 'error');
+        return;
+    }
+
+    const formData = {
+        full_name: fullName,
+        email: email
+    };
+
+    try {
+        const response = await fetch('/admin/api/profile', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showToast('Profil berhasil diupdate!', 'success');
+            // Reload to update data
+            setTimeout(() => location.reload(), 1500);
+        } else {
+            showToast(result.message || 'Gagal update profil', 'error');
+        }
+    } catch (error) {
+        showToast('Terjadi kesalahan saat update profil', 'error');
+    }
+});
+
+// Handle password change
+document.getElementById('password-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const currentPassword = document.getElementById('current_password').value;
+    const newPassword = document.getElementById('new_password').value;
+    const confirmPassword = document.getElementById('confirm_password').value;
+
+    // Validate password match
+    if (newPassword !== confirmPassword) {
+        showToast('Password baru dan konfirmasi password tidak cocok', 'error');
+        return;
+    }
+
+    // Validate password requirements
+    if (/\s/.test(newPassword)) {
+        showToast('Password tidak boleh mengandung spasi', 'error');
+        return;
+    }
+
+    if (newPassword.length < 8) {
+        showToast('Password minimal 8 karakter', 'error');
+        return;
+    }
+
+    if (!/[A-Z]/.test(newPassword)) {
+        showToast('Password harus mengandung huruf besar', 'error');
+        return;
+    }
+
+    if (!/[a-z]/.test(newPassword)) {
+        showToast('Password harus mengandung huruf kecil', 'error');
+        return;
+    }
+
+    if (!/[0-9]/.test(newPassword)) {
+        showToast('Password harus mengandung angka', 'error');
+        return;
+    }
+
+    const formData = {
+        current_password: currentPassword,
+        new_password: newPassword
+    };
+
+    try {
+        const response = await fetch('/admin/api/change-password', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(formData)
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            showToast('Password berhasil diubah!', 'success');
+            document.getElementById('password-form').reset();
+        } else {
+            showToast(result.message || 'Gagal ubah password', 'error');
+        }
+    } catch (error) {
+        showToast('Terjadi kesalahan saat ubah password', 'error');
+    }
+});
+
+// Load admin data on page load
+document.addEventListener('DOMContentLoaded', loadAdminData);
+</script>
+{% endblock %}

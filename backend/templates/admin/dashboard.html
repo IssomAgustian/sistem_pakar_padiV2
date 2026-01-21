@@ -1,0 +1,387 @@
+{% extends "admin/layout.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+{% block page_title_header %}Dashboard{% endblock %}
+{% block page_icon %}tachometer-alt{% endblock %}
+
+{% block admin_content %}
+<div class="container-fluid">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-card p-4" style="background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); border-radius: 15px; color: white; box-shadow: 0 4px 20px rgba(22,163,74,0.3);">
+                <h2 class="mb-2">
+                    <i class="fas fa-seedling me-2"></i>
+                    Selamat Datang, {{ session.get('admin_name', 'Administrator') }}!
+                </h2>
+                <p class="mb-0 opacity-90">Kelola sistem pakar diagnosis penyakit tanaman padi dengan mudah dan efisien</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card" style="border-left: 4px solid #3b82f6;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size: 0.9rem;">Total Pengguna</p>
+                        <h3 class="mb-0 fw-bold" id="totalUsers">
+                            <span class="loading"></span>
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="width: 60px; height: 60px; background: linear-gradient(135deg, #3b82f6, #2563eb); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-users fa-2x text-white"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-success"><i class="fas fa-arrow-up me-1"></i>Terdaftar</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card" style="border-left: 4px solid #ef4444;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size: 0.9rem;">Total Penyakit</p>
+                        <h3 class="mb-0 fw-bold" id="totalDiseases">
+                            <span class="loading"></span>
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="width: 60px; height: 60px; background: linear-gradient(135deg, #ef4444, #dc2626); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-virus fa-2x text-white"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-primary"><i class="fas fa-database me-1"></i>Database</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size: 0.9rem;">Total Gejala</p>
+                        <h3 class="mb-0 fw-bold" id="totalSymptoms">
+                            <span class="loading"></span>
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="width: 60px; height: 60px; background: linear-gradient(135deg, #f59e0b, #d97706); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-stethoscope fa-2x text-white"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-info"><i class="fas fa-list me-1"></i>Terdata</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6 mb-3">
+            <div class="stat-card" style="border-left: 4px solid #10b981;">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted mb-1" style="font-size: 0.9rem;">Total Diagnosis</p>
+                        <h3 class="mb-0 fw-bold" id="totalDiagnoses">
+                            <span class="loading"></span>
+                        </h3>
+                    </div>
+                    <div class="stat-icon" style="width: 60px; height: 60px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                        <i class="fas fa-clipboard-check fa-2x text-white"></i>
+                    </div>
+                </div>
+                <div class="mt-3">
+                    <small class="text-warning"><i class="fas fa-history me-1"></i>Riwayat</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Diagnoses - Full Width -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="stat-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history me-2 text-primary"></i>
+                        Diagnosis Terbaru
+                    </h5>
+                    <a href="/admin/riwayat" class="btn btn-sm btn-outline-primary">
+                        Lihat Semua <i class="fas fa-arrow-right ms-1"></i>
+                    </a>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover" id="recentDiagnosesTable">
+                        <thead>
+                            <tr>
+                                <th>Tanggal</th>
+                                <th>Pengguna</th>
+                                <th>Penyakit</th>
+                                <th>Confidence</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td colspan="4" class="text-center py-4">
+                                    <div class="loading mx-auto"></div>
+                                    <p class="mt-2 text-muted">Memuat data...</p>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Chart -->
+    <div class="row">
+        <div class="col-12">
+            <div class="stat-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-chart-line me-2 text-success"></i>
+                    Statistik Diagnosis (7 Hari Terakhir)
+                </h5>
+                <canvas id="diagnosisChart" height="80"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Fetch dashboard statistics from DATABASE
+async function loadDashboardStats() {
+    try {
+        const response = await fetch('/admin/dashboard/stats');
+        const result = await response.json();
+
+        if (result.success) {
+            const stats = result.data;
+            // Update UI with animation
+            animateCounter('totalUsers', stats.total_users);
+            animateCounter('totalDiseases', stats.total_diseases);
+            animateCounter('totalSymptoms', stats.total_symptoms);
+            animateCounter('totalDiagnoses', stats.total_diagnoses);
+        } else {
+            throw new Error('Failed to load stats');
+        }
+
+        // Load recent diagnoses
+        await loadRecentDiagnoses();
+
+        // Load chart
+        await loadDiagnosisChart();
+
+    } catch (error) {
+        console.error('Error loading dashboard stats:', error);
+        document.getElementById('totalUsers').textContent = '0';
+        document.getElementById('totalDiseases').textContent = '0';
+        document.getElementById('totalSymptoms').textContent = '0';
+        document.getElementById('totalDiagnoses').textContent = '0';
+    }
+}
+
+// Animate counter
+function animateCounter(elementId, targetValue) {
+    const element = document.getElementById(elementId);
+    let current = 0;
+    const increment = targetValue / 30;
+    const timer = setInterval(() => {
+        current += increment;
+        if (current >= targetValue) {
+            element.textContent = targetValue;
+            clearInterval(timer);
+        } else {
+            element.textContent = Math.floor(current);
+        }
+    }, 30);
+}
+
+// Load recent diagnoses from DATABASE
+async function loadRecentDiagnoses() {
+    try {
+        const response = await fetch('/admin/dashboard/recent-diagnoses');
+        const result = await response.json();
+
+        const tbody = document.querySelector('#recentDiagnosesTable tbody');
+
+        if (!result.success || !result.data || result.data.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2 d-block"></i>
+                        Belum ada data diagnosis
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        // Render real data from database
+        tbody.innerHTML = result.data.map((d, index) => {
+            // Determine badge color based on confidence
+            let badgeColor = 'success';
+            if (d.final_cf_value < 70) badgeColor = 'warning';
+            if (d.final_cf_value < 50) badgeColor = 'danger';
+
+            return `
+                <tr style="animation: fadeIn 0.5s ease-in ${index * 0.1}s; animation-fill-mode: backwards;">
+                    <td><small>${d.diagnosis_date}</small></td>
+                    <td>${d.user_email}</td>
+                    <td><span class="badge bg-primary">${d.disease_name}</span></td>
+                    <td><span class="badge bg-${badgeColor}">${d.final_cf_value}%</span></td>
+                </tr>
+            `;
+        }).join('');
+
+    } catch (error) {
+        console.error('Error loading recent diagnoses:', error);
+        const tbody = document.querySelector('#recentDiagnosesTable tbody');
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="4" class="text-center text-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Error loading data
+                </td>
+            </tr>
+        `;
+    }
+}
+
+// Load diagnosis chart from DATABASE
+async function loadDiagnosisChart() {
+    try {
+        const response = await fetch('/admin/dashboard/chart-data');
+        const result = await response.json();
+
+        if (!result.success) {
+            throw new Error('Failed to load chart data');
+        }
+
+        const ctx = document.getElementById('diagnosisChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: result.data.labels,
+                datasets: [{
+                    label: 'Jumlah Diagnosis',
+                    data: result.data.values,
+                    borderColor: '#16a34a',
+                    backgroundColor: 'rgba(22, 163, 74, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointBackgroundColor: '#16a34a',
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    pointRadius: 5,
+                    pointHoverRadius: 7
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return 'Diagnosis: ' + context.parsed.y;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            stepSize: 1,
+                            precision: 0
+                        },
+                        grid: {
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+
+    } catch (error) {
+        console.error('Error loading chart:', error);
+    }
+}
+
+// Load dashboard on page load
+document.addEventListener('DOMContentLoaded', loadDashboardStats);
+</script>
+
+<style>
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.welcome-card {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.btn-outline-primary,
+.btn-outline-success,
+.btn-outline-info,
+.btn-outline-warning,
+.btn-outline-secondary {
+    font-weight: 600;
+    border-width: 2px;
+}
+
+.btn-outline-primary:hover {
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
+    border-color: #3b82f6;
+    color: white;
+}
+
+.btn-outline-success:hover {
+    background: linear-gradient(135deg, #10b981, #059669);
+    border-color: #10b981;
+    color: white;
+}
+
+.btn-outline-info:hover {
+    background: linear-gradient(135deg, #06b6d4, #0891b2);
+    border-color: #06b6d4;
+    color: white;
+}
+
+.btn-outline-warning:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border-color: #f59e0b;
+    color: white;
+}
+
+.btn-outline-secondary:hover {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    border-color: #6b7280;
+    color: white;
+}
+</style>
+{% endblock %}
