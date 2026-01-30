@@ -15,9 +15,15 @@ bp = Blueprint('diagnosis', __name__)
 def start_diagnosis():
     # Handle OPTIONS preflight request for CORS
     if request.method == 'OPTIONS':
-        from flask import make_response
+        from flask import make_response, current_app
         response = make_response()
-        response.headers.add('Access-Control-Allow-Origin', 'http://localhost:3000')
+        origin = request.headers.get('Origin')
+        allowed_origins = current_app.config.get('CORS_ALLOWED_ORIGINS_LIST', [])
+
+        if origin and origin in allowed_origins:
+            response.headers.add('Access-Control-Allow-Origin', origin)
+            response.headers.add('Vary', 'Origin')
+
         response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization')
         response.headers.add('Access-Control-Allow-Methods', 'POST,OPTIONS')
         response.headers.add('Access-Control-Allow-Credentials', 'true')

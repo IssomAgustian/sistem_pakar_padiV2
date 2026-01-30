@@ -69,9 +69,11 @@ sistem-pakar-padi/
    **IMPORTANT**: Never commit `.env` files to version control!
 
    ```bash
-   # Backend
+   # Docker / Production
+   cp .env.example .env
+
+   # Local development
    cp backend/.env.example backend/.env
-   # Frontend
    cp frontend/.env.example frontend/.env
    ```
 
@@ -107,27 +109,63 @@ sistem-pakar-padi/
 
    **Frontend** (`frontend/.env`):
    ```env
-   VITE_API_URL=http://localhost:5001/api
+   VITE_API_URL=/api
    VITE_GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
    VITE_APP_NAME=Sistem Pakar Padi
    VITE_APP_VERSION=1.0.0
    ```
 
-3. **Run with Docker (Recommended)**
-   ```bash
-   docker-compose up -d
-   ```
+3. **Run with Docker (Recommended - detailed)**
 
-4. **Initialize database**
-   ```bash
-   docker-compose exec backend flask db upgrade
-   docker-compose exec backend python seed_data.py
-   ```
+   **Step-by-step**
+   1) **Prepare the root `.env`**
+      - Docker uses the root `.env` (not `backend/.env`).
+      - Edit `.env` and make sure these are correct:
+        - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`
+        - `DATABASE_URL` should point to `db:5432` (default in `.env.example`)
 
-5. **Access the application**
-   - Frontend: http://localhost:3000
-   - Backend API: http://localhost:5000/api
-   - Admin Panel: http://localhost:5000/admin
+   2) **Build and start containers**
+      ```bash
+      docker compose up -d --build
+      ```
+      If your Docker still uses the old command, use:
+      ```bash
+      docker-compose up -d --build
+      ```
+
+   3) **Check container status**
+      ```bash
+      docker compose ps
+      ```
+
+   4) **Initialize database**
+      By default migrations run automatically on container start when
+      `RUN_MIGRATIONS=true`. You can still run them manually if needed:
+      ```bash
+      docker compose exec backend flask db upgrade
+      ```
+      For initial data seeding, either set `RUN_SEED=true` in `.env`
+      (and optionally `RESET_SEED=true` to re-seed) or run manually:
+      ```bash
+      docker compose exec backend python seed_data.py
+      ```
+
+   5) **Access the application**
+      - Frontend: http://localhost
+      - Backend API: http://localhost/api/health
+      - Admin Panel: http://localhost/admin
+
+   6) **View logs (if something fails)**
+      ```bash
+      docker compose logs -f backend
+      docker compose logs -f frontend
+      docker compose logs -f db
+      ```
+
+   7) **Stop containers**
+      ```bash
+      docker compose down
+      ```
 
 ### Manual Setup (Without Docker)
 

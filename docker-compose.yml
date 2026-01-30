@@ -1,0 +1,68 @@
+services:
+  db:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-pakar_padi}
+      POSTGRES_USER: ${POSTGRES_USER:-pakar_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      FLASK_APP: wsgi.py
+      DATABASE_URL: ${DATABASE_URL:-postgresql+psycopg://${POSTGRES_USER:-pakar_user}:${POSTGRES_PASSWORD:-change_me}@db:5432/${POSTGRES_DB:-pakar_padi}}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      CORS_ALLOWED_ORIGINS: ${CORS_ALLOWED_ORIGINS:-}
+      SECRET_KEY: ${SECRET_KEY:-change_me}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change_me}
+      AI_PROVIDER: ${AI_PROVIDER:-gemini}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      HISTORY_RETENTION_DAYS: ${HISTORY_RETENTION_DAYS:-30}
+      MAX_DIAGNOSES_PER_DAY: ${MAX_DIAGNOSES_PER_DAY:-20}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@pakar-padi.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-change_me}
+      RUN_MIGRATIONS: ${RUN_MIGRATIONS:-true}
+      RUN_SEED: ${RUN_SEED:-false}
+      RESET_SEED: ${RESET_SEED:-false}
+      GUNICORN_WORKERS: ${GUNICORN_WORKERS:-2}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/static/uploads
+    expose:
+      - "5000"
+
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api}
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID:-}
+        VITE_APP_NAME: ${VITE_APP_NAME:-Sistem Pakar Padi}
+        VITE_APP_VERSION: ${VITE_APP_VERSION:-1.0.0}
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+
+volumes:
+  db_data:
+  uploads:

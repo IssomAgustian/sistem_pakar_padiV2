@@ -1,43 +1,46 @@
 #!/usr/bin/env python3
 """
 Create Admin User
-Script untuk membuat user admin default
+Script untuk membuat user admin
 """
 
+import os
 from app import create_app, db
 from app.models.user import User
 
+
 def create_admin():
-    """Create default admin user"""
+    """Create admin user"""
     app = create_app()
 
     with app.app_context():
-        # Check if admin already exists
-        admin = User.query.filter_by(email='admin@pakar-padi.com').first()
+        admin_email = os.getenv('ADMIN_EMAIL', 'admin@pakar-padi.com')
+        admin_password = os.getenv('ADMIN_PASSWORD')
+
+        admin = User.query.filter_by(email=admin_email).first()
 
         if admin:
             print(f"Admin sudah ada: {admin.email}")
-            print(f"Untuk login gunakan:")
-            print(f"  Email: admin@pakar-padi.com")
-            print(f"  Password: admin123")
             return
 
-        # Create admin user
+        if not admin_password:
+            raise RuntimeError("ADMIN_PASSWORD belum diset. Set dulu di environment.")
+
         admin = User(
-            email='admin@pakar-padi.com',
+            email=admin_email,
             full_name='Administrator',
             role='admin',
             is_active=True
         )
-        admin.set_password('admin123')
+        admin.set_password(admin_password)
 
         db.session.add(admin)
         db.session.commit()
 
-        print("✅ Admin user berhasil dibuat!")
-        print(f"Email: admin@pakar-padi.com")
-        print(f"Password: admin123")
-        print(f"\nSilakan login di: http://127.0.0.1:5001/admin/login")
+        print("Admin user berhasil dibuat!")
+        print(f"Email: {admin_email}")
+        print("\nSilakan login di: http://127.0.0.1:5001/admin/login")
+
 
 if __name__ == '__main__':
     create_admin()

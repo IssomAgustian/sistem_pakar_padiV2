@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5001/api',
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
@@ -33,8 +33,14 @@ api.interceptors.response.use(
       // Server responded with error status
       const { status, data } = error.response;
 
-      if (status === 401) {
-        // Unauthorized - clear token and redirect to login
+      const authError =
+        status === 401 ||
+        (status === 422 &&
+          typeof data?.msg === 'string' &&
+          /token|signature/i.test(data.msg));
+
+      if (authError) {
+        // Invalid/expired token - clear auth and redirect to login
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         window.location.href = '/login';

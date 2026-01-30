@@ -41,8 +41,9 @@ def _decode_symptom_ids(symptom_blob):
 
 
 def _column_exists(conn, table_name, column_name):
-    rows = conn.execute(sa.text(f"PRAGMA table_info({table_name})")).fetchall()
-    return any(row[1] == column_name for row in rows)
+    inspector = sa.inspect(conn)
+    columns = inspector.get_columns(table_name)
+    return any(col.get('name') == column_name for col in columns)
 
 
 def upgrade():

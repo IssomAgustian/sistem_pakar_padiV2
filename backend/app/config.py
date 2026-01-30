@@ -28,7 +28,7 @@ class Config:
     # Database
     SQLALCHEMY_DATABASE_URI = os.getenv(
         'DATABASE_URL',
-        'postgresql://postgres:password@localhost:5432/pakar_padi'
+        'sqlite:///pakar_padi.db'
     )
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     SQLALCHEMY_ECHO = False
@@ -40,6 +40,7 @@ class Config:
 
     # CORS
     FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+    CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', '')
 
     # AI Configuration
     AI_PROVIDER = os.getenv('AI_PROVIDER', 'openai')  # 'openai' or 'gemini'
@@ -69,6 +70,7 @@ class ProductionConfig(Config):
     """Production configuration"""
     DEBUG = False
     SQLALCHEMY_ECHO = False
+    SESSION_COOKIE_SECURE = True
 
 
 class TestingConfig(Config):

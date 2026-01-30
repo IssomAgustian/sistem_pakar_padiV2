@@ -25,10 +25,14 @@ def create_app(config_name='development'):
     template_dir = os.path.join(base_dir, 'templates')
     static_dir = os.path.join(base_dir, 'static')
 
-    app = Flask(__name__,
-                template_folder=template_dir,
-                static_folder=static_dir)
-    app.config.from_object(config[config_name])
+    app = Flask(
+        __name__,
+        template_folder=template_dir,
+        static_folder=static_dir
+    )
+
+    env_config = os.getenv('FLASK_ENV', config_name)
+    app.config.from_object(config.get(env_config, config['default']))
 
     # Initialize extensions
     db.init_app(app)
@@ -36,17 +40,29 @@ def create_app(config_name='development'):
     jwt.init_app(app)
 
     # Configure CORS - allow multiple frontend URLs
-    allowed_origins = [
-        app.config['FRONTEND_URL'],
-        'http://localhost:3000',
-        'http://localhost:3001',
-        'http://127.0.0.1:3000',
-        'http://127.0.0.1:3001'
-    ]
+    def _split_origins(value):
+        if not value:
+            return []
+        return [origin.strip() for origin in value.split(',') if origin.strip()]
+
+    allowed_origins = set(_split_origins(app.config.get('CORS_ALLOWED_ORIGINS')))
+    if app.config.get('FRONTEND_URL'):
+        allowed_origins.add(app.config['FRONTEND_URL'])
+
+    if app.config.get('DEBUG'):
+        allowed_origins.update([
+            'http://localhost:3000',
+            'http://localhost:3001',
+            'http://127.0.0.1:3000',
+            'http://127.0.0.1:3001'
+        ])
+
+    allowed_origins_list = sorted(allowed_origins)
+    app.config['CORS_ALLOWED_ORIGINS_LIST'] = allowed_origins_list
 
     CORS(app,
          resources={r"/api/*": {
-             "origins": allowed_origins,
+             "origins": allowed_origins_list,
              "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
              "allow_headers": ["Content-Type", "Authorization"],
              "expose_headers": ["Content-Type", "Authorization"],

@@ -1,5 +1,9 @@
 FROM python:3.10-slim
 
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_APP=wsgi.py
+
 WORKDIR /app
 
 # Install system dependencies
@@ -17,8 +21,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy application
 COPY backend/ .
 
+# Ensure entrypoint is executable
+RUN chmod +x /app/entrypoint.sh
+
 # Expose port
 EXPOSE 5000
 
-# Run application
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "run:app"]
+# Run application with migrations
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:5000 --workers ${GUNICORN_WORKERS:-2} wsgi:app"]

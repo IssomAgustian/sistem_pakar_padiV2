@@ -4,6 +4,7 @@ Run Flask Application
 Sistem Pakar Diagnosis Penyakit Tanaman Padi
 """
 
+import os
 from app import create_app, db
 from app.models.user import User
 from app.models.disease import Disease
@@ -14,7 +15,8 @@ from app.models.admin_log import AdminLog
 from app.models.system_settings import SystemSettings
 
 # Create Flask app instance
-app = create_app()
+config_name = os.getenv('FLASK_ENV', 'development')
+app = create_app(config_name)
 
 # Shell context for Flask CLI
 @app.shell_context_processor
@@ -32,4 +34,5 @@ def make_shell_context():
 
 if __name__ == '__main__':
     # Port 5000 might be blocked by Windows, using 5001 instead
-    app.run(debug=True, host='0.0.0.0', port=5001)
+    port = int(os.getenv('PORT', 5001))
+    app.run(debug=app.config.get('DEBUG', False), host='0.0.0.0', port=port)

@@ -40,7 +40,7 @@ const historyService = {
 
       // Open the PDF endpoint in a new window with auth token
       // The endpoint returns a printable HTML page
-      const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5001/api';
+      const baseURL = import.meta.env.VITE_API_URL || '/api';
       const pdfUrl = `${baseURL}/history/${historyId}/pdf`;
 
       // Open in new window

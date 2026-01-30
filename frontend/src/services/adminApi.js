@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Base API URL
-const API_BASE_URL = 'http://localhost:5001/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 // Create axios instance
 const adminApi = axios.create({
@@ -29,8 +29,16 @@ adminApi.interceptors.request.use(
 adminApi.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      // Unauthorized - clear token and redirect to login
+    const status = error.response?.status;
+    const data = error.response?.data;
+    const authError =
+      status === 401 ||
+      (status === 422 &&
+        typeof data?.msg === 'string' &&
+        /token|signature/i.test(data.msg));
+
+    if (authError) {
+      // Invalid/expired token - clear token and redirect to login
       localStorage.removeItem('adminToken');
       localStorage.removeItem('adminUser');
       window.location.href = '/admin/login';
