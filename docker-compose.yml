@@ -12,7 +12,8 @@ services:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
-      retries: 5
+      retries: 10
+      start_period: 90s
 
   backend:
     build:
@@ -45,8 +46,8 @@ services:
         condition: service_healthy
     volumes:
       - uploads:/app/static/uploads
-    expose:
-      - "5000"
+    ports:
+      - "5001:80"
 
   frontend:
     build:
@@ -61,7 +62,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "80:80"
+      - "8000:80"
 
 volumes:
   db_data:

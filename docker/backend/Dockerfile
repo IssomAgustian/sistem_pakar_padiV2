@@ -25,8 +25,8 @@ COPY backend/ .
 RUN chmod +x /app/entrypoint.sh
 
 # Expose port
-EXPOSE 5000
+EXPOSE 80
 
 # Run application with migrations
 ENTRYPOINT ["/app/entrypoint.sh"]
-CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:5000 --workers ${GUNICORN_WORKERS:-2} wsgi:app"]
+CMD ["sh", "-c", "gunicorn --bind 0.0.0.0:80 --workers ${GUNICORN_WORKERS:-2} wsgi:app"]
