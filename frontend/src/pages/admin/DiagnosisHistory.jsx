@@ -7,8 +7,6 @@ import {
   FiCheckCircle,
   FiEye,
   FiTrash2,
-  FiCalendar,
-  FiFilter,
   FiX,
 } from 'react-icons/fi';
 
@@ -88,9 +86,9 @@ const DiagnosisHistory = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="admin-page space-y-6">
         {/* Header */}
-        <div>
+        <div className="admin-page-header">
           <h1 className="text-3xl font-bold">Diagnosis History</h1>
           <p className="text-base-content/70 mt-1">
             View and manage all diagnosis records

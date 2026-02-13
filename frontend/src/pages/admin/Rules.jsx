@@ -177,9 +177,9 @@ const Rules = () => {
 
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <div className="admin-page space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between">
+        <div className="admin-page-header flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-3xl font-bold">Rules Management</h1>
             <p className="text-base-content/70 mt-1">
